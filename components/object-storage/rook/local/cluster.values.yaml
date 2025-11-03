@@ -1,0 +1,64 @@
+# Overrides for local 'kind' cluster
+
+cephClusterSpec:
+  # Disable default OSD-on-raw-device setup, which fails on kind
+  storage:
+    useAllNodes: false
+    useAllDevices: false
+
+  # --- This is the replacement block for 'kind' ---
+  # Use kind's 'standard' StorageClass to create PVCs
+  storageClassDeviceSets:
+    - name: set1
+      # One OSD for each of our 3 kind worker nodes
+      count: 3
+      volumeClaimTemplates:
+        - metadata:
+            name: data
+          spec:
+            resources:
+              requests:
+                storage: 10Gi # Keep it small for local dev
+            storageClassName: standard # kind's built-in class
+            accessModes:
+              - ReadWriteOnce
+      portable: false
+  # --- End of replacement block ---
+
+  # Use 3 mons, one for each worker node
+  mon:
+    count: 3
+    allowMultiplePerNode: false
+
+  # Enable the dashboard
+  dashboard:
+    enabled: true
+
+# --- Define the Object Store ---
+# We use the 'cephObjectStores' list (plural) from the default values file
+cephObjectStores:
+  - name: my-store # This will be the name of our store
+    spec:
+      # Use 3-way replication for metadata (requires 3 OSDs)
+      metadataPool:
+        replicated:
+          size: 3
+      # Use EC 2+1 for data (requires 3 OSDs, which we have)
+      dataPool:
+        erasureCoded:
+          dataChunks: 2
+          codingChunks: 1
+      # Run one S3 gateway pod, which is fine for local dev
+      gateway:
+        port: 80
+        instances: 1
+
+# --- Disable Other Storage Types ---
+# We only want Object Storage for this demo, so we
+# override the default block and file pools with empty lists.
+cephBlockPools: []
+cephFileSystems: []
+cephFileSystemVolumeSnapshotClass:
+  enabled: false
+cephBlockPoolsVolumeSnapshotClass:
+  enabled: false
