@@ -75,7 +75,7 @@ We use Helm to install Cilium. **Note the `cluster.name` and `cluster.id` flags*
 
 ```bash
 # 1. Add the Cilium Helm repo
-helm repo add cilium [https://helm.cilium.io/](https://helm.cilium.io/)
+helm repo add cilium https://helm.cilium.io/
 
 # 2. (Optional) Pre-load the image for 'kind' to speed up installation
 docker pull quay.io/cilium/cilium:stable
