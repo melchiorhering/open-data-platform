@@ -8,7 +8,7 @@
 
 ## Kind
 
-Create the first cluster with the `kind-config.yml`
+Create the a cluster with the `kind-config.yml` for local development
 
 ```bash
 kind create cluster --config=kind-config.yml
@@ -16,8 +16,10 @@ kind create cluster --config=kind-config.yml
 
 Setup Cilium & Hubble using helm:
 ```bash
-helm upgrade cilium cilium/cilium --version 1.18.3 \
-   --namespace kube-system \
-   --reuse-values \
-   --set hubble.relay.enabled=true
+helm install cilium cilium/cilium --version 1.18.3 \
+    --namespace kube-system \
+    --set image.pullPolicy=IfNotPresent \
+    --set ipam.mode=kubernetes \
+    --set hubble.relay.enabled=true \
+    --set hubble.ui.enabled=true
 ```
