@@ -1,18 +1,6 @@
-# RustFS
+# RustFS (🦀)
 
 This is an object-storage setup using [RustFS](https://rustfs.com/en/)
-
-## Helm (Local)
-
-To start a rusfs cluster, we are using helm
-
-```bash
-# Create a namespace
-helm install rustfs -n rustfs --create-namespace ./ -f local.values.yml
-# Upgrading
-helm upgrade rustfs ./ -n rustfs -f local.values.yml
-```
-
 
 ## Helm (Cloudpirates)
 
@@ -21,13 +9,13 @@ https://artifacthub.io/packages/helm/cloudpirates-rustfs/rustfs
 
 ```bash
 # Install Cloudpirates RustFS repo
-helm install my-rustfs oci://registry-1.docker.io/cloudpirates/rustfs
+helm install rustfs oci://registry-1.docker.io/cloudpirates/rustfs
 
 # Install based on custom values file
-helm install my-rustfs oci://registry-1.docker.io/cloudpirates/rustfs -f my-values.yaml
+helm install rustfs oci://registry-1.docker.io/cloudpirates/rustfs -f values.yml
 
-
-
+# Upgrade based on custom values file
+helm upgrade --install rustfs oci://registry-1.docker.io/cloudpirates/rustfs -f values.yaml
 ```
 
 ## Control
