@@ -1,7 +1,7 @@
 #!/bin/bash
-
+set -e
 # CONFIGURATION
-export GATEWAY_API_VERSION="v1.4.0"
+export GATEWAY_API_VERSION="1.4.0"
 export CILIUM_VERSION="1.18.4"
 export CERT_MANAGER="1.19.0"
 
@@ -17,7 +17,7 @@ helm repo update
 # 2. GATEWAY API CRD SETUP
 # ====================================================================
 echo "🔗 Installing Gateway API CRDs..."
-kubectl apply -k "https://github.com/kubernetes-sigs/gateway-api/config/crd/experimental?ref=${GATEWAY_API_VERSION}"
+kubectl apply --server-side -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/v${GATEWAY_API_VERSION}/experimental-install.yaml"
 
 # 3. INSTALL CILIUM
 # ====================================================================

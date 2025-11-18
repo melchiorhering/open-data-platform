@@ -1,0 +1,19 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: prefect-route
+  namespace: prefect
+spec:
+  parentRefs:
+    - name: kind-gateway
+      namespace: default
+  hostnames:
+    - "prefect.127.0.0.1.sslip.io"
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: prefect-server
+          port: 4200

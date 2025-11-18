@@ -20,6 +20,7 @@ spec:
   privateKey:
     algorithm: ECDSA
     size: 256
+    rotationPolicy: "Always"
   secretName: ca
   commonName: ca
   issuerRef:

@@ -28,7 +28,7 @@ releases:
   # Orchestration / Workflow Management
   - name: prefect-server
     chart: prefect/prefect-server
-    version: 2025.11.14001416
+    version: 2025.11.18162334
     namespace: prefect
     createNamespace: true
     values:
