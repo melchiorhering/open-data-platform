@@ -4,83 +4,161 @@
 
 ################################################################################
 # REPOSITORIES
-#
-# This block lists the Helm chart repositories we need.
 ################################################################################
 repositories:
-  # K8s Dashboard for cluster management
-  - name: kubernetes-dashboard
-    url: https://kubernetes.github.io/dashboard/
-  - name: lakekeeper
+  - name: prefect
+    url: https://prefecthq.github.io/prefect-helm # Prefect
+  - name: lakekeeper # Data Lake Management (Ie. Apache Iceberg)
     url: https://lakekeeper.github.io/lakekeeper-charts/
-  - name: cnpg
+  - name: bedag # TiDB Operator
+    url: https://bedag.github.io/helm-charts
+  - name: superset # Apache Superset
+    url: https://apache.github.io/superset
+  - name: pingcap # TiDB Operator
+    url: https://charts.pingcap.org
+  - name: surrealdb # SurrealDB Helm Charts
+    url: https://helm.surrealdb.com
+  - name: cnpg # CloudNativePG Postgres Operator
     url: https://cloudnative-pg.github.io/charts
-  - name: cilium
-    url: https://helm.cilium.io/
-
-# NOTE: OCI charts (like Rustfs) do not go in this 'repositories' block.
-# They are referenced directly in the 'releases' block.
-
 ################################################################################
 # RELEASES
-#
-# This block lists all the applications (charts) to install.
 ################################################################################
+
 releases:
-  # NGINX Ingress Controller
-  - name: nginx-ingress
-    chart: oci://ghcr.io/nginxinc/charts/nginx-ingress
-    version: 1.0.0
-    # It's best practice to put the ingress controller in its own namespace
-    namespace: nginx-ingress
-    createNamespace: true
-
-  # Rustfs Object Storage
-  - name: rustfs
-    # The 'chart:' line for OCI charts is the full URL.
-    chart: oci://registry-1.docker.io/cloudpirates/rustfs
-    version: 0.1.0
-    namespace: default
+  # Orchestration / Workflow Management
+  - name: prefect-server
+    chart: prefect/prefect-server
+    version: 2025.11.14001416
+    namespace: prefect
     createNamespace: true
     values:
-      - ./components/object-storage/rustfs/values.yml
+      - ./components/orchestration/prefect/server.values.yaml
 
-  # CNPG Operator (The "Brain")
-  - name: cnpg-operator
-    chart: cnpg/cloudnative-pg
-    version: 0.26.1
-    namespace: database
-    createNamespace: true
-    values:
-      - ./components/database/cloud-native-pg/operator.values.yml
-
-  # CNPG Cluster (The Postgres Cluster itself)
-  - name: cnpg-cluster
-    chart: cnpg/cluster
-    version: 0.26.1
-    namespace: database
-    createNamespace: false
-    values:
-      - ./components/database/cloud-native-pg/cluster.values.yml
-    needs:
-      - database/cnpg-operator
-
-  # Lakekeeper Data Lake
-  - name: lakekeeper
-    chart: lakekeeper/lakekeeper
-    version: 0.8.1
-    namespace: default
-    createNamespace: false
-    values:
-      - ./components/governance/lakekeeper/values.yml
-    needs:
-      - database/cnpg-cluster
-
-  # # Hubble - The Cilium Observability UI
-  # - name: hubble
-  #   chart: cilium/hubble
-  #   version: 1.18.3
-  #   namespace: kube-system # Installs alongside Cilium
+  # - name: prefect-worker
+  #   chart: prefect/prefect-agent
+  #   version: 2025.11.10173228
+  #   namespace: orchestration
+  #   createNamespace: false
   #   values:
-  #     - ui:
-  #         enabled: true
+  #     - ./components/orchestration/prefect/worker.values.yaml
+
+  # Database / Storage
+#   - name: reddis
+#     chart: oci://registry-1.docker.io/cloudpirates/redis
+#     version: 0.14.1
+#     namespace: database
+#     createNamespace: true
+#     values:
+#       - ./components/database/redis/values.yaml
+# #   # Rustfs Object Storage
+#   - name: rustfs
+#     chart: ./components/object-storage/rustfs
+#     version: 0.1.0
+#     namespace: object-storage
+#     createNamespace: true
+#     needs:
+#       - ingress/nginx-ingress
+#     # --- Configuration ---
+#     values:
+#       # 1. This loads all your defaults
+#       - ./components/object-storage/rustfs/values.yaml
+#       - ingress:
+#           enabled: true
+#           # --- CERT-MANAGER INTEGRATION ---
+#           annotations:
+#             # Replace 'letsencrypt-prod' with your cluster issuer name
+#             cert-manager.io/cluster-issuer: "letsencrypt-staging"
+
+#           # Configure the hosts that should use TLS
+#           tls:
+#             - secretName: rustfs-prod-tls # Cert manager will create this secret
+#               hosts:
+#                 - s3.rustfs.local.com
+#                 - console.rustfs.local.com
+#           s3:
+#             host: "s3.rustfs.local.com"
+#             servicePort: s3-api
+#           console:
+#             host: "console.rustfs.local.com"
+#             servicePort: console
+# - name: sail
+#   chart: ./components/compute/sail
+#   version: 0.1.0
+#   namespace: compute
+#   createNamespace: true
+#   needs:
+#     - ingress/nginx-ingress
+#     - object-storage/rustfs
+#   values:
+#     # 1. This loads all your defaults
+#     - ./components/compute/sail/values.yaml
+#     - ingress:
+#         enabled: true
+#         host: "sail.local.com"
+#         annotations:
+#           # Use your production issuer when ready
+#           cert-manager.io/cluster-issuer: "letsencrypt-staging"
+#         tls:
+#           - secretName: sail-prod-tls
+#             hosts:
+#               - "sail.local.com"
+
+# # TiDB Operator (with a hook for CRDs)
+# - name: tidb-operator
+#   chart: pingcap/tidb-operator
+#   version: v1.6.4
+#   namespace: tidb-operator
+#   createNamespace: true
+#   values:
+#     - ./components/database/surrealdb/tidb/operator.values.yml
+
+# - name: tidb-cluster
+#   chart: bedag/raw
+#   namespace: tikv
+#   createNamespace: true
+#   needs:
+#     - tidb-operator/tidb-operator
+#   hooks:
+#     - name: "Create TiDB Cluster"
+#       events: ["postsync"]
+#       showlogs: true
+#       command: "kubectl"
+#       args:
+#         - "apply"
+#         - "-f"
+#         - https://raw.githubusercontent.com/pingcap/tidb-operator/v1.4.5/examples/basic/tidb-cluster.yaml
+
+# needs:
+#   # Wait for the operator to be installed first
+#   - tidb-operator
+
+# CNPG Operator (The "Brain")
+# - name: cnpg-operator
+#   chart: cnpg/cloudnative-pg
+#   version: 0.26.1
+#   namespace: database
+#   createNamespace: true
+#   values:
+#     - ./components/database/cloud-native-pg/operator.values.yml
+
+# CNPG Cluster (The Postgres Cluster itself)
+# - name: cnpg-cluster
+#   chart: cnpg/cluster
+#   version: 0.26.1
+#   namespace: database
+#   createNamespace: false
+#   values:
+#     - ./components/database/cloud-native-pg/cluster.values.yml
+#   needs:
+#     - database/cnpg-operator
+
+# Lakekeeper Data Lake
+# - name: lakekeeper
+#   chart: lakekeeper/lakekeeper
+#   version: 0.8.1
+#   namespace: default
+#   createNamespace: false
+#   values:
+#     - ./components/governance/lakekeeper/values.yml
+#   needs:
+#     - database/cnpg-cluster

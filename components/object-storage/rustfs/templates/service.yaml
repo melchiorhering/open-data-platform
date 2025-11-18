@@ -1,0 +1,45 @@
+# rustfs/templates/service.yaml
+
+# --- Headless Service for StatefulSet peer discovery ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rustfs.fullname" . }}-headless
+  labels:
+    {{- include "rustfs.labels" . | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true # Important for cluster startup
+  ports:
+    - port: {{ .Values.config.s3Port }}
+      targetPort: s3-api
+      protocol: TCP
+      name: s3-api
+    - port: {{ .Values.config.consolePort }}
+      targetPort: console
+      protocol: TCP
+      name: console
+  selector:
+    {{- include "rustfs.selectorLabels" . | nindent 4 }}
+
+---
+# --- Client-facing Service for Ingress/NodePort ---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "rustfs.fullname" . }}-svc
+  labels:
+    {{- include "rustfs.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.config.s3Port }}
+      targetPort: s3-api
+      protocol: TCP
+      name: s3-api
+    - port: {{ .Values.config.consolePort }}
+      targetPort: console
+      protocol: TCP
+      name: console
+  selector:
+    {{- include "rustfs.selectorLabels" . | nindent 4 }}

@@ -1,0 +1,81 @@
+Your RustFS instance has been deployed.
+
+1. **Get your Access and Secret Keys**
+
+   The keys are stored in the secret: {{ include "rustfs.fullname" . }}-secret
+
+   {{- /* Safely lookup the secret. This will be 'nil' during 'helm lint'. */}}
+   {{- $secret := (lookup "v1" "Secret" .Release.Namespace (printf "%s-secret" (include "rustfs.fullname" .))) }}
+   {{- $accessKey := "" }}
+   {{- $secretKey := "" }}
+
+   {{- /* Only try to decode the keys IF the secret was found (i.e., not during lint). */}}
+   {{- if $secret }}
+     {{- $accessKey = (index $secret.data "RUSTFS_ACCESS_KEY") | b64dec }}
+     {{- $secretKey = (index $secret.data "RUSTFS_SECRET_KEY") | b64dec }}
+   {{- end }}
+
+   Access Key:
+   {{- /* If $accessKey is empty (which it will be during lint), show the fallback command. */}}
+   {{- $accessKey | default (printf "echo $(kubectl get secret %s-secret -n %s -o jsonpath='{.data.RUSTFS_ACCESS_KEY}' | base64 -d)" (include "rustfs.fullname" .) .Release.Namespace) }}
+
+   Secret Key:
+   {{- /* If $secretKey is empty (which it will be during lint), show the fallback command. */}}
+   {{- $secretKey | default (printf "echo $(kubectl get secret %s-secret -n %s -o jsonpath='{.data.RUSTFS_SECRET_KEY}' | base64 -d)" (include "rustfs.fullname" .) .Release.Namespace) }}
+
+   (If the keys show as <nil> or commands, the lookup failed. Please run the echo commands.)
+
+2. **Access the S3 API**
+
+   {{- if .Values.ingress.enabled }}
+   The S3 API is exposed via Ingress at:
+   **http://{{ .Values.ingress.s3.host }}**
+
+   To access this, you must have an Ingress controller running (e.g., NGINX)
+   and have DNS configured for `{{ .Values.ingress.s3.host }}` to point
+   to your Ingress controller's external IP.
+
+   For local testing (e.g., Docker Desktop), add this to your `/etc/hosts` file:
+   127.0.0.1  {{ .Values.ingress.s3.host }}
+
+   Then configure your S3 client:
+   mc alias set myrustfs http://{{ .Values.ingress.s3.host }} <ACCESS_KEY> <SECRET_KEY>
+
+   {{- else }}
+   The S3 API is not exposed via Ingress. You can access it via port-forwarding:
+
+   1. Run the port-forward command:
+      {{- $name := include "rustfs.fullname" . }}
+      {{- $port := .Values.config.s3Port }}
+      kubectl port-forward svc/{{ $name }}-svc 9000:{{ $port }} &
+
+   2. Configure your S3 client:
+      mc alias set myrustfs http://localhost:9000 <ACCESS_KEY> <SECRET_KEY>
+   {{- end }}
+
+3. **Access the Console**
+
+   {{- if .Values.config.consoleEnable }}
+   {{- if .Values.ingress.enabled }}
+   The Console is exposed via Ingress at:
+   **http://{{ .Values.ingress.console.host }}**
+
+   To access this, ensure your DNS is configured (see step 2) or add
+   this entry to your `/etc/hosts` file:
+   127.0.0.1  {{ .Values.ingress.console.host }}
+
+   Then open http://{{ .Values.ingress.console.host }} in your browser.
+
+   {{- else }}
+   The Console is not exposed via Ingress. You can access it via port-forwarding:
+
+   1. Run the port-forward command:
+      {{- $name := include "rustfs.fullname" . }}
+      {{- $consolePort := .Values.config.consolePort }}
+      kubectl port-forward svc/{{ $name }}-svc 9001:{{ $consolePort }} &
+
+   2. Open http://localhost:9001 in your browser.
+   {{- end }}
+   {{- else }}
+   The console is disabled. Set `config.consoleEnable=true` in values.yaml to enable it.
+   {{- end }}

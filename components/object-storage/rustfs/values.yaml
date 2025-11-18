@@ -1,0 +1,174 @@
+# -- Number of pods to deploy. RustFS recommends specific counts (e.g., 4 or 16).
+replicaCount: 4
+
+# -- Image configuration
+image:
+  repository: rustfs/rustfs
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: "latest"
+
+# -- Authentication configuration
+# These values will be stored in a Kubernetes Secret.
+auth:
+  # -- Default access key.
+  accessKey: "rustfsadmin"
+  # -- Default secret key.
+  secretKey: "rustfsadmin"
+
+# -- RustFS application configuration
+# These values will be stored in a Kubernetes ConfigMap.
+config:
+  # -- S3 API port inside the container
+  s3Port: 9000
+  # -- Console UI port inside the container
+  consolePort: 9001
+  # -- Enable the console UI
+  consoleEnable: true
+  # -- Log level (e.g., "info", "debug", "warn", "error")
+  logLevel: "info"
+  # -- Log directory inside the container (must match a volumeMount)
+  logDirectory: "/logs"
+
+  # -- TLS configuration (for RustFS-terminated TLS, not Ingress)
+  tls:
+    # -- Enable TLS directly on the RustFS pod
+    enabled: false
+    # -- Name of the K8s Secret containing tls.crt and tls.key
+    # This secret must be created manually or with cert-manager.
+    # The chart will mount this secret to /certs
+    secretName: ""
+
+# -- Certificate Issuer Configuration (for cert-manager)
+certManager:
+  # -- Set to true to deploy a ClusterIssuer resource (must be set to false if you are using an existing one)
+  createClusterIssuer: true
+
+  # -- Name of the ClusterIssuer resource to create
+  issuerName: letsencrypt-staging
+
+  # -- Email address required for ACME registration (Let's Encrypt)
+  email: "your.email@example.com"
+
+  # -- ACME server URL (staging is recommended for testing)
+  server: "https://acme-staging-v02.api.letsencrypt.org/directory"
+
+  # -- Secret name to store the ACME private key
+  privateKeySecretName: letsencrypt-staging-private-key
+
+# -- Service configuration (for the client-facing service)
+service:
+  type: ClusterIP
+
+# -- Ingress configuration
+ingress:
+  # -- Set to true to create an Ingress resource
+  enabled: true
+  # -- IngressClassName (e.g., "nginx", "traefik").
+  className: "nginx"
+
+  # -- Global Ingress annotations
+  annotations:
+    {}
+    # kubernetes.io/ingress.class: nginx
+    # cert-manager.io/cluster-issuer: "letsencrypt-prod"
+
+  # -- Global Ingress TLS configuration
+  # Can be used to cover both hosts with a single certificate
+  tls: []
+  #  - secretName: rustfs-global-tls
+  #    hosts:
+  #      - s3.rustfs
+  #      - console.rustfs
+
+  # --- S3 API Ingress Rule ---
+  s3:
+    # -- Enable the Ingress rule for the S3 API
+    enabled: true
+    # -- Hostname for the S3 API
+    host: s3.rustfs
+    # -- Ingress paths for the S3 API
+    paths:
+      - path: /
+        pathType: ImplementationSpecific
+    # -- Internal service port name. Do not change.
+    servicePort: s3-api
+
+  # --- Console Ingress Rule ---
+  console:
+    # -- Enable the Ingress rule for the Console
+    enabled: true
+    # -- Hostname for the Console
+    host: console.rustfs
+    # -- Ingress paths for the Console
+    paths:
+      - path: /
+        pathType: ImplementationSpecific
+    # -- Internal service port name. Do not change.
+    servicePort: console
+
+# -- Storage configuration
+# Uses a StatefulSet VolumeClaimTemplate to create one PersistentVolumeClaim per replica.
+storage:
+  # -- Size of the persistent volume for each pod
+  size: 10Gi
+  # -- Storage class to use. If empty or "-", uses the default.
+  storageClass: ""
+
+# -- Pod resource requests and limits
+resources:
+  {}
+  # limits:
+  #   cpu: 1000m
+  #   memory: 2Gi
+  # requests:
+  #   cpu: 500m
+  #   memory: 1Gi
+
+# -- Liveness and Readiness probe settings
+probes:
+  liveness:
+    enabled: true
+    # --- Liveness probe spec ---
+    spec:
+      httpGet:
+        path: /health
+        port: s3-api # Use the named port
+      initialDelaySeconds: 30
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+  readiness:
+    enabled: true
+    # --- Readiness probe spec ---
+    spec:
+      httpGet:
+        path: /health
+        port: s3-api # Use the named port
+      initialDelaySeconds: 15
+      periodSeconds: 10
+      timeoutSeconds: 5
+      failureThreshold: 3
+
+# -- ServiceAccount configuration
+serviceAccount:
+  # -- Specifies whether a service account should be created
+  create: true
+  # -- Annotations to add to the service account
+  annotations: {}
+  # -- The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+# -- Security Context
+# Run the container as a non-root user for better security.
+securityContext:
+  enabled: true
+  runAsUser: 1000
+  runAsGroup: 1000
+  # -- An initContainer will be used to set volume permissions (chown)
+  initContainer:
+    image:
+      repository: busybox
+      tag: "latest" # Use a specific tag instead of 'latest'
+      pullPolicy: IfNotPresent

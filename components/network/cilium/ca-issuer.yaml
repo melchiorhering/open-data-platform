@@ -1,0 +1,37 @@
+# ./components/network/cilium/ca-issuer.yaml
+
+# Step 1: The "stamp-making machine" in cert-manager ns
+apiVersion: cert-manager.io/v1
+kind: Issuer
+metadata:
+  name: self-signed
+  namespace: cert-manager
+spec:
+  selfSigned: {}
+---
+# Step 2: The "official stamp" (CA key) in cert-manager ns
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: ca
+  namespace: cert-manager
+spec:
+  isCA: true
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  secretName: ca
+  commonName: ca
+  issuerRef:
+    name: self-signed
+    kind: Issuer
+---
+# Step 3: The CLUSTER-WIDE "notary public"
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: ca-cluster-issuer
+spec:
+  ca:
+    # Tell the ClusterIssuer where to find the "stamp"
+    secretName: ca

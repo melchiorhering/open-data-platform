@@ -1,0 +1,21 @@
+# sail-chart/templates/service.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: sail-spark-server
+  # This is a string, so quotes are good:
+  namespace: "{{ .Release.Namespace }}"
+  labels:
+    app.kubernetes.io/name: sail
+    app.kubernetes.io/component: spark-server
+spec:
+  # This is a string, so quotes are good:
+  type: "{{ .Values.service.type }}"
+  selector:
+    app.kubernetes.io/name: sail
+    app.kubernetes.io/component: spark-server
+  ports:
+    - protocol: TCP
+      # These are numbers, so NO quotes:
+      port: {{ .Values.service.port }} # prettier-ignore
+      targetPort: {{ .Values.service.targetPort }} # pr

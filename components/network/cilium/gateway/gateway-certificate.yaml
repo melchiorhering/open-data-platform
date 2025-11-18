@@ -1,0 +1,18 @@
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: kind-wildcard-cert
+  namespace: default
+spec:
+  # The Secret where the cert will be stored.
+  # Refers to "kind" so you know it's your local dev cert.
+  secretName: kind-gateway-tls
+
+  issuerRef:
+    name: ca-cluster-issuer
+    kind: ClusterIssuer
+    group: cert-manager.io
+
+  commonName: "*.127.0.0.1.sslip.io"
+  dnsNames:
+    - "*.127.0.0.1.sslip.io"

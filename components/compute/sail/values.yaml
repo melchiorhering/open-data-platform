@@ -1,0 +1,54 @@
+# sail-chart/values.yaml
+
+replicaCount: 1 # From sail.yaml, with a note that it can't be > 1
+
+image:
+  repository: sail
+  pullPolicy: IfNotPresent
+  tag: "latest" # From sail.yaml
+
+serviceAccount:
+  create: true
+  name: "sail-user" # From sail.yaml
+
+rbac:
+  create: true
+  roleName: "sail-spark-server" # From sail.yaml
+
+service:
+  type: ClusterIP
+  port: 50051 # From sail.yaml
+  targetPort: 50051 # From sail.yaml
+
+# Configuration for the sail-spark-server
+config:
+  rustLog: "info" # From sail.yaml
+  mode: "kubernetes-cluster" # From sail.yaml
+
+# This section adds the hostPath volumes from test-volume-patch.yaml
+# Set 'enabled: false' for a production deployment that doesn't use hostPath.
+hostPaths:
+  enabled: true
+  paths:
+    - name: data
+      hostPath: /tmp/sail # From test-volume-patch.yaml
+      mountPath: /tmp/sail # From test-volume-patch.yaml
+    - name: pytest-data
+      hostPath: /private/tmp/sail # From test-volume-patch.yaml
+      mountPath: /private/tmp/sail # From test-volume-patch.yaml
+
+# Add this new section at the end
+ingress:
+  enabled: false
+  className: "nginx" # Use the default NGINX ingress class
+  host: "sail.example.com"
+  annotations:
+    # This is the most important annotation for Spark Connect (gRPC)
+    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+
+    # --- CERT-MANAGER INTEGRATION (like your rustfs) ---
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+  tls:
+    - secretName: sail-prod-tls # Cert manager will create this
+      hosts:
+        - "sail.example.com"

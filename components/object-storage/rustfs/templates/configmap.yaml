@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "rustfs.fullname" . }}-config
+  labels:
+    {{- include "rustfs.labels" . | nindent 4 }}
+data:
+  RUSTFS_ADDRESS: ":{{ .Values.config.s3Port }}"
+  RUSTFS_CONSOLE_ADDRESS: ":{{ .Values.config.consolePort }}"
+  RUSTFS_CONSOLE_ENABLE: {{ .Values.config.consoleEnable | quote }}
+  RUSTFS_LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  RUSTFS_OBS_LOG_DIRECTORY: {{ .Values.config.logDirectory | quote }}
+
+  # --- THE CLUSTERING KEY ---
+  # It builds the string: "http://rustfs-{0...3}.rustfs-headless.default.svc.cluster.local:9000/data"
+  # This tells each pod how to find its peers.
+  RUSTFS_VOLUMES: "http://{{ include "rustfs.fullname" . }}-{0...{{ sub .Values.replicaCount 1 }}}.{{ include "rustfs.fullname" . }}-headless.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.s3Port }}/data"

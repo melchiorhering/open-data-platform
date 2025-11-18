@@ -1,0 +1,133 @@
+# rustfs/templates/statefulset.yaml
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "rustfs.fullname" . }}
+  labels:
+    {{- include "rustfs.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.replicaCount }}
+  serviceName: {{ include "rustfs.fullname" . }}-headless
+  podManagementPolicy: Parallel
+
+  selector:
+    matchLabels:
+      {{- include "rustfs.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "rustfs.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "rustfs.serviceAccountName" . }}
+
+      # --- Define all volumes for the pod ---
+      volumes:
+        - name: logs
+          emptyDir: {}
+        {{- if .Values.config.tls.enabled }}
+        - name: tls-certs
+          secret:
+            secretName: {{ .Values.config.tls.secretName }}
+        {{- end }}
+
+      # --- ADDED: Init Container to fix permissions ---
+      {{- if .Values.securityContext.enabled }}
+      initContainers:
+        - name: fix-permissions
+          image: "{{ .Values.securityContext.initContainer.image.repository }}:{{ .Values.securityContext.initContainer.image.tag }}"
+          imagePullPolicy: {{ .Values.securityContext.initContainer.image.pullPolicy }}
+          command: ["sh", "-c"]
+          args:
+            - |
+              chown -R {{ .Values.securityContext.runAsUser }}:{{ .Values.securityContext.runAsGroup }} /data
+              chown -R {{ .Values.securityContext.runAsUser }}:{{ .Values.securityContext.runAsGroup }} /logs
+
+              # --- THIS SCRIPT FIXES THE DNS ERROR ---
+              NAMESPACE=$(cat /var/run/secrets/kubernetes.io/serviceaccount/namespace)
+              HEADLESS_SVC="{{ include "rustfs.fullname" . }}-headless"
+              FQDN="${HOSTNAME}.${HEADLESS_SVC}.${NAMESPACE}.svc.cluster.local"
+
+              echo "Waiting for DNS record to be ready: $FQDN"
+              until nslookup $FQDN; do
+                echo "Waiting for DNS... sleeping 1s"
+                sleep 1
+              done
+              echo "DNS record found! Proceeding."
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: logs
+              mountPath: /logs
+      {{- end }} # end securityContext.enabled
+
+      # --- Main Application Container ---
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+
+          # --- ADDED: Run as non-root user ---
+          {{- if .Values.securityContext.enabled }}
+          securityContext:
+            runAsUser: {{ .Values.securityContext.runAsUser }}
+            runAsGroup: {{ .Values.securityContext.runAsGroup }}
+            runAsNonRoot: true
+            readOnlyRootFilesystem: false # Required by RustFS
+          {{- end }}
+
+          command: ["/usr/bin/rustfs"]
+
+          envFrom:
+            - configMapRef:
+                name: {{ include "rustfs.fullname" . }}-config
+            - secretRef:
+                name: {{ include "rustfs.fullname" . }}-secret
+
+          ports:
+            - name: s3-api
+              containerPort: {{ .Values.config.s3Port }}
+              protocol: TCP
+            - name: console
+              containerPort: {{ .Values.config.consolePort }}
+              protocol: TCP
+
+          {{- if .Values.probes.liveness.enabled }}
+          livenessProbe:
+            {{- toYaml .Values.probes.liveness.spec | nindent 12 }}
+          {{- end }}
+          {{- if .Values.probes.readiness.enabled }}
+          readinessProbe:
+            {{- toYaml .Values.probes.readiness.spec | nindent 12 }}
+          {{- end }}
+
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: logs
+              mountPath: {{ .Values.config.logDirectory }}
+            {{- if .Values.config.tls.enabled }}
+            - name: tls-certs
+              mountPath: "/certs"
+              readOnly: true
+            {{- end }}
+
+  # --- This is the correct, scalable Volume definition ---
+  volumeClaimTemplates:
+    - metadata:
+        name: data # K8s will add '-rustfs-0', '-rustfs-1', etc.
+      spec:
+        accessModes: [ "ReadWriteOnce" ]
+        resources:
+          requests:
+            storage: {{ .Values.storage.size }}
+        {{- if .Values.storage.storageClass }}
+        {{- if (eq "-" .Values.storage.storageClass) }}
+        storageClassName: ""
+        {{- else }}
+        storageClassName: {{ .Values.storage.storageClass | quote }}
+        {{- end }}
+        {{- end }}
