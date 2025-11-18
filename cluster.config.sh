@@ -1,9 +1,9 @@
 #!/bin/bash
 
 # CONFIGURATION
-export GATEWAY_API_VERSION="v1.2.0"
+export GATEWAY_API_VERSION="v1.4.0"
 export CILIUM_VERSION="1.18.4"
-export CERT_MANAGER="1.16.2"
+export CERT_MANAGER="1.19.0"
 
 echo "🚀 Starting Local Cluster Setup (sslip.io + kind-gateway)..."
 
