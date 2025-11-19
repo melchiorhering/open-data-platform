@@ -1,7 +1,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
 metadata:
-  name: kind-gateway
+  name: internet-gateway
   namespace: default
 spec:
   gatewayClassName: cilium
@@ -18,9 +18,8 @@ spec:
       tls:
         mode: Terminate
         certificateRefs:
-          # MUST match the secretName from gateway-certificate.yaml
           - kind: Secret
-            name: kind-gateway-tls
+            name: kind-gateway-tls # Must match the secret from gateway-certificate.yaml
       allowedRoutes:
         namespaces:
           from: All

@@ -1,9 +1,10 @@
 apiVersion: cert-manager.io/v1
 kind: Certificate
 metadata:
-  name: kind-wildcard-cert
+  name: kind-gateway-tls
   namespace: default
 spec:
+  # his must match the 'certificateRefs' in your internet-gateway.yaml
   secretName: kind-gateway-tls
 
   issuerRef:
@@ -11,7 +12,10 @@ spec:
     kind: ClusterIssuer
     group: cert-manager.io
 
-  # Using specific hostname and sslip.io
-  commonName: "prefect.127.0.0.1.sslip.io"
+  # Set the wildcard as the primary name
+  commonName: "*.localhost"
+
+  # Include both the root and the wildcard in the Subject Alternative Names (SANs)
   dnsNames:
-    - "prefect.127.0.0.1.sslip.io"
+    - "localhost"
+    - "*.localhost"

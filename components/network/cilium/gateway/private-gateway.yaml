@@ -1,0 +1,18 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: private-gateway
+  namespace: default
+spec:
+  gatewayClassName: cilium
+  listeners:
+    - name: internal-http
+      protocol: HTTP
+      port: 8080 # Use a high port unlikely to conflict with external access
+
+      # Assuming internal services use a different hostname pattern
+      hostname: "*.internal.local"
+      allowedRoutes:
+        namespaces:
+          from: Same
+    # NOTE: No HTTPS listener is configured, as internal traffic is often plain HTTP
