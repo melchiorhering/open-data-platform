@@ -26,7 +26,7 @@ server:
   # -- array with environment variables to add to server deployment
   env:
     - name: PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT
-      value: false
+      value: "False"
 
 # -------------------------------------------------------
 # Gateway Configuration
