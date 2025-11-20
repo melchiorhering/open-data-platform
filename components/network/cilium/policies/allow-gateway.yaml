@@ -1,0 +1,22 @@
+apiVersion: cilium.io/v2
+kind: CiliumClusterwideNetworkPolicy
+metadata:
+  name: zt-allow-gateway-infrastructure
+spec:
+  endpointSelector:
+    matchLabels:
+      # Cilium automatically adds this label to Gateway pods
+      app.kubernetes.io/name: "cilium-gateway"
+
+  # INGRESS: Allow traffic from the world/host (NodePort)
+  ingress:
+    - fromEntities:
+        - world
+        - cluster
+        - host
+
+  # EGRESS: Allow Gateway to route traffic to services in the cluster
+  egress:
+    - toEntities:
+        - cluster
+        - world

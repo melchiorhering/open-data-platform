@@ -1,61 +1,35 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sail-spark-server
-  namespace: {{ .Release.Namespace }} # Use Helm's release namespace
+  name: {{ include "sail-spark.fullname" . }}
   labels:
-    app.kubernetes.io/name: sail
-    app.kubernetes.io/component: spark-server
+    {{- include "sail-spark.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: {{ .Values.driver.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: sail
-      app.kubernetes.io/component: spark-server
+      {{- include "sail-spark.selectorLabels" . | nindent 6 }}
   template:
     metadata:
       labels:
-        app.kubernetes.io/name: sail
-        app.kubernetes.io/component: spark-server
+        {{- include "sail-spark.selectorLabels" . | nindent 8 }}
     spec:
-      serviceAccountName: {{ .Values.serviceAccount.name }}
-      {{- if and .Values.hostPaths.enabled .Values.hostPaths.paths }}
-      volumes:
-        {{- range .Values.hostPaths.paths }}
-        - name: {{ .name }}
-          hostPath:
-            path: {{ .hostPath }}
-            type: DirectoryOrCreate
-        {{- end }}
+      serviceAccountName: {{ include "sail-spark.serviceAccountName" . }}
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
       {{- end }}
       containers:
         - name: server
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: [ "sail" ]
-          args: [ "spark", "server", "--ip", "0.0.0.0", "--port", "{{ .Values.service.targetPort }}" ]
+          args: [ "spark", "server", "--ip", "0.0.0.0", "--port", "{{ .Values.driver.service.port }}" ]
           ports:
-            - containerPort: {{ .Values.service.targetPort }}
-          {{- if and .Values.hostPaths.enabled .Values.hostPaths.paths }}
-          volumeMounts:
-            {{- range .Values.hostPaths.paths }}
-            - name: {{ .name }}
-              mountPath: {{ .mountPath }}
-            {{- end }}
-          {{- end }}
+            - name: grpc
+              containerPort: {{ .Values.driver.service.port }}
+              protocol: TCP
           env:
-            - name: RUST_LOG
-              value: {{ .Values.config.rustLog | quote }}
-            - name: SAIL_MODE
-              value: {{ .Values.config.mode | quote }}
-            - name: SAIL_CLUSTER__DRIVER_LISTEN_HOST
-              value: "0.0.0.0"
-            - name: SAIL_CLUSTER__DRIVER_EXTERNAL_HOST
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
-            - name: SAIL_KUBERNETES__IMAGE
-              value: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
             - name: SAIL_KUBERNETES__NAMESPACE
               value: {{ .Release.Namespace }}
             - name: SAIL_KUBERNETES__DRIVER_POD_NAME
@@ -63,9 +37,48 @@ spec:
                 fieldRef:
                   fieldPath: metadata.name
             - name: SAIL_KUBERNETES__WORKER_SERVICE_ACCOUNT_NAME
-              value: {{ .Values.serviceAccount.name }}
-            {{- if .Values.hostPaths.enabled }}
-            # This value is built by the helper template
-            - name: SAIL_KUBERNETES__WORKER_POD_TEMPLATE
-              value: {{ include "sail.workerPodTemplateDict" . | quote }}
+              value: {{ include "sail-spark.serviceAccountName" . }}
+            - name: SAIL_CLUSTER__DRIVER_EXTERNAL_HOST
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+
+            {{- /* Standard Env Vars from values.yaml */}}
+            {{- range $key, $val := .Values.driver.env }}
+            - name: {{ $key }}
+              value: {{ $val | quote }}
             {{- end }}
+
+            - name: SAIL_KUBERNETES__IMAGE
+              value: "{{ default .Values.image.repository .Values.worker.image }}:{{ default .Values.image.tag .Values.worker.tag | default .Chart.AppVersion }}"
+
+            {{- /* DYNAMIC WORKER TEMPLATE GENERATION */}}
+            - name: SAIL_KUBERNETES__WORKER_POD_TEMPLATE
+              value: |
+                {
+                  "spec": {
+                    "containers": [
+                      {
+                        "name": "worker",
+                        "resources": {{ toJson .Values.worker.resources }},
+                        "volumeMounts": {{ toJson .Values.worker.volumeMounts }}
+                      }
+                    ],
+                    "volumes": {{ toJson .Values.worker.volumes }}
+                  }
+                }
+
+          {{- with .Values.driver.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+          {{- with .Values.driver.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+
+      {{- with .Values.driver.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

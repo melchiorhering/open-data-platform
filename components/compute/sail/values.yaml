@@ -1,54 +1,58 @@
-# sail-chart/values.yaml
-
-replicaCount: 1 # From sail.yaml, with a note that it can't be > 1
-
 image:
   repository: sail
   pullPolicy: IfNotPresent
-  tag: "latest" # From sail.yaml
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
 
 serviceAccount:
   create: true
-  name: "sail-user" # From sail.yaml
+  annotations: {}
+  # If not set and create is true, a name is generated using the fullname template
+  name: "sail-user"
 
-rbac:
-  create: true
-  roleName: "sail-spark-server" # From sail.yaml
+# Configuration for the Sail Driver (Server)
+driver:
+  replicaCount: 1 # Spark sessions are tied to the pod, usually kept at 1
+  service:
+    type: ClusterIP
+    port: 50051
 
-service:
-  type: ClusterIP
-  port: 50051 # From sail.yaml
-  targetPort: 50051 # From sail.yaml
+  resources:
+    {}
+    # limits:
+    #   cpu: 100m
+    #   memory: 128Mi
+    # requests:
+    #   cpu: 100m
+    #   memory: 128Mi
 
-# Configuration for the sail-spark-server
-config:
-  rustLog: "info" # From sail.yaml
-  mode: "kubernetes-cluster" # From sail.yaml
+  # Env vars specific to the driver logic
+  env:
+    RUST_LOG: info
+    SAIL_MODE: kubernetes-cluster
+    SAIL_CLUSTER__DRIVER_LISTEN_HOST: "0.0.0.0"
 
-# This section adds the hostPath volumes from test-volume-patch.yaml
-# Set 'enabled: false' for a production deployment that doesn't use hostPath.
-hostPaths:
-  enabled: true
-  paths:
-    - name: data
-      hostPath: /tmp/sail # From test-volume-patch.yaml
-      mountPath: /tmp/sail # From test-volume-patch.yaml
-    - name: pytest-data
-      hostPath: /private/tmp/sail # From test-volume-patch.yaml
-      mountPath: /private/tmp/sail # From test-volume-patch.yaml
+  # Volumes to mount on the Driver Pod
+  volumes: []
+  # Example for local dev (mirrors your patch):
+  # - name: data
+  #   hostPath:
+  #     path: /tmp/sail
+  #     type: DirectoryOrCreate
 
-# Add this new section at the end
-ingress:
-  enabled: false
-  className: "nginx" # Use the default NGINX ingress class
-  host: "sail.example.com"
-  annotations:
-    # This is the most important annotation for Spark Connect (gRPC)
-    nginx.ingress.kubernetes.io/backend-protocol: "GRPC"
+  volumeMounts: []
+  # - name: data
+  #   mountPath: /tmp/sail
 
-    # --- CERT-MANAGER INTEGRATION (like your rustfs) ---
-    cert-manager.io/cluster-issuer: "letsencrypt-staging"
-  tls:
-    - secretName: sail-prod-tls # Cert manager will create this
-      hosts:
-        - "sail.example.com"
+# Configuration for the Sail Workers (spawned by the driver)
+worker:
+  image: "" # If empty, defaults to the main image repository/tag above
+  resources: {}
+
+  # Volumes to mount on Worker Pods
+  # You can copy the driver volumes here if they share storage (e.g., hostPath)
+  volumes: []
+  volumeMounts: []

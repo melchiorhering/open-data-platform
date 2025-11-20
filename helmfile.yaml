@@ -2,51 +2,36 @@
 # Run 'helmfile sync' to apply everything.
 # Run 'helmfile destroy' to remove everything.
 
+# bases:
+# - environments.yaml
+# - defaults.yaml
+# - templates.yaml
+
+helmfiles:
+  - # Path to the helmfile state file being processed BEFORE releases in this state file
+    path: ./components/orchestration/helmfile.yaml
 ################################################################################
 # REPOSITORIES
 ################################################################################
-repositories:
-  - name: prefect
-    url: https://prefecthq.github.io/prefect-helm # Prefect
-  - name: lakekeeper # Data Lake Management (Ie. Apache Iceberg)
-    url: https://lakekeeper.github.io/lakekeeper-charts/
-  - name: bedag # TiDB Operator
-    url: https://bedag.github.io/helm-charts
-  - name: superset # Apache Superset
-    url: https://apache.github.io/superset
-  - name: pingcap # TiDB Operator
-    url: https://charts.pingcap.org
-  - name: surrealdb # SurrealDB Helm Charts
-    url: https://helm.surrealdb.com
-  - name: cnpg # CloudNativePG Postgres Operator
-    url: https://cloudnative-pg.github.io/charts
+# repositories:
+#   - name: lakekeeper # Data Lake Management (Ie. Apache Iceberg)
+#     url: https://lakekeeper.github.io/lakekeeper-charts/
+#   - name: bedag # TiDB Operator
+#     url: https://bedag.github.io/helm-charts
+#   - name: superset # Apache Superset
+#     url: https://apache.github.io/superset
+#   - name: pingcap # TiDB Operator
+#     url: https://charts.pingcap.org
+#   - name: surrealdb # SurrealDB Helm Charts
+#     url: https://helm.surrealdb.com
+#   - name: cnpg # CloudNativePG Postgres Operator
+#     url: https://cloudnative-pg.github.io/charts
 ################################################################################
 # RELEASES
 ################################################################################
 
-releases:
-  # Orchestration / Workflow Management
-  - name: prefect-server
-    chart: prefect/prefect-server
-    version: 2025.11.18162334
-    namespace: prefect
-    createNamespace: true
-    values:
-      - ./components/orchestration/prefect/server.values.yaml
-    hooks:
-      - events: ["postsync"]
-        command: "kubectl"
-        args: ["apply", "-f", "components/orchestration/prefect/route.yaml"]
-
-  # - name: prefect-worker
-  #   chart: prefect/prefect-agent
-  #   version: 2025.11.10173228
-  #   namespace: orchestration
-  #   createNamespace: false
-  #   values:
-  #     - ./components/orchestration/prefect/worker.values.yaml
-
-  # Database / Storage
+# releases:
+#   Database / Storage
 #   - name: reddis
 #     chart: oci://registry-1.docker.io/cloudpirates/redis
 #     version: 0.14.1

@@ -1,0 +1,47 @@
+server:
+  basicAuth:
+    enabled: false
+    authString: "admin:pass"
+    existingSecret: ""
+
+  priorityClassName: ""
+  apiBasePath: "/api"
+  debug: false
+  loggingLevel: WARNING
+
+  uiConfig:
+    prefectUiApiUrl: "https://prefect.localhost/api"
+    prefectUiStaticDirectory: "/ui_build"
+
+  env:
+    - name: PREFECT_SERVER_UI_SHOW_PROMOTIONAL_CONTENT
+      value: "False"
+    - name: PREFECT_SERVER_ANALYTICS_ENABLED
+      value: "False"
+    - name: PREFECT_API_SERVICES_LATE_RUNS_ENABLED
+      value: "True"
+
+# Disable the chart's attempt to manage the gateway.
+# You are doing this manually in route.yaml.
+gateway:
+  enabled: false
+
+# Disable this too! Use your manual route.yaml instead.
+httproute:
+  enabled: false
+
+postgresql:
+  enabled: false
+
+sqlite:
+  enabled: true
+  persistence:
+    enabled: true
+    size: 1Gi
+
+redis:
+  enabled: true
+  architecture: standalone
+
+secret:
+  create: false

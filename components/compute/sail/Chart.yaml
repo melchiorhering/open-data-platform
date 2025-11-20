@@ -1,7 +1,6 @@
-# sail-chart/Chart.yaml
 apiVersion: v2
-name: sail-chart
-description: A Helm chart for deploying the Sail Spark server
+name: sail-spark
+description: A Helm chart for Sail (Rust-based Spark) Server
 type: application
 version: 0.1.0
 appVersion: "latest"

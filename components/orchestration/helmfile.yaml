@@ -1,0 +1,40 @@
+# This file defines your entire application stack.
+# Run 'helmfile sync' to apply everything.
+# Run 'helmfile destroy' to remove everything.
+
+################################################################################
+# REPOSITORIES
+################################################################################
+repositories:
+  - name: prefect
+    url: https://prefecthq.github.io/prefect-helm
+
+################################################################################
+# RELEASES
+################################################################################
+releases:
+  - name: prefect-server
+    chart: prefect/prefect-server
+    version: 2025.11.19221857
+    namespace: prefect
+    createNamespace: true
+    values:
+      - prefect/server/values.yaml
+      - global.prefect.prefectTag: 3.6.3-python3.12
+    hooks:
+      - events: ["postsync"]
+        command: "kubectl"
+        args: ["apply", "-f", "prefect/server/policy.yaml"]
+      - events: ["postsync"]
+        command: "kubectl"
+        args: ["apply", "-f", "prefect/server/route.yaml"]
+
+  # - name: prefect-worker
+  #   chart: prefect/prefect-worker
+  #   version: 2025.11.19221857
+  #   namespace: orchestration
+  #   createNamespace: true
+  #   values:
+  #     - prefect/worker/values.yaml
+  #     - worker.prefectTag: 3.6.3-python3.12-kubernetes
+  #     - worker.config.workPool: "kubernetes-pool"

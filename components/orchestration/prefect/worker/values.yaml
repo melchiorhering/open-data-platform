@@ -1,0 +1,101 @@
+## Deployment Configuration
+worker:
+  autoscaling:
+    # -- enable autoscaling for the worker
+    enabled: false
+    # -- minimum number of replicas to scale down to
+    minReplicas: 1
+    # -- maximum number of replicas to scale up to
+    maxReplicas: 1
+    # -- target CPU utilization percentage for scaling the worker
+    targetCPUUtilizationPercentage: 80
+    # -- target memory utilization percentage for scaling the worker
+    targetMemoryUtilizationPercentage: 80
+
+  ## general configuration of the worker
+  config:
+    # -- the work pool that your started worker will poll.
+    workPool: ""
+    # -- one or more work queue names for the worker to pull from. if not provided, the worker will pull from all work queues in the work pool
+    workQueues: []
+    # -- how often the worker will query for runs
+    queryInterval: 5
+    # -- when querying for runs, how many seconds in the future can they be scheduled
+    prefetchSeconds: 10
+    # -- connect using HTTP/2 if the server supports it (experimental)
+    http2: true
+    ## You can set the worker type here.
+    ## The default image includes only the type "kubernetes".
+    ## Custom workers must be properly registered with the prefect cli.
+    ## See the guide here: https://docs.prefect.io/2.11.3/guides/deployment/developing-a-new-worker-type/
+    # -- specify the worker type
+    type: kubernetes
+    ## one of 'always', 'if-not-present', 'never', 'prompt'
+    # --  install policy to use workers from Prefect integration packages.
+    installPolicy: prompt
+    # -- the name to give to the started worker. If not provided, a unique name will be generated.
+    name: null
+    # -- maximum number of flow runs to start simultaneously (default: unlimited)
+    limit: null
+    # -- the namespace where the jobs would spawn. If unset, spawns in the same namespace as the worker controller. Requires role.namespace to be set with the same value.
+    jobNamespace: null
+
+    ##  If unspecified, Prefect will use the default base job template for the given worker type. If the work pool already exists, this will be ignored.
+    ## e.g.:
+    ## baseJobTemplate:
+    ##   configuration: |
+    ##    {
+    ##      "variables": {
+    ##        ...
+    ##      },
+    ##      "job_configuration": {
+    ##        ...
+    ##      }
+    ##    }
+    ## OR
+    ## baseJobTemplate:
+    ##   existingConfigMapName: "my-existing-config-map"
+    baseJobTemplate:
+      # -- the name of an existing ConfigMap containing a base job template. NOTE - the key must be 'baseJobTemplate.json'
+      existingConfigMapName: ""
+      # -- JSON formatted base job template. If data is provided here, the chart will generate a configmap and mount it to the worker pod
+      configuration: null
+      # -- optionally override the default name of the generated configmap
+      # name: ""
+
+  ## connection settings
+  # -- one of 'cloud', 'customerManagedCloud', or 'selfHostedServer'
+  apiConfig: selfHostedServer
+
+  selfHostedServerApiConfig:
+    # If the prefect server is located external to this cluster, set a fully qualified domain name as the apiUrl
+    # If the prefect server pod is deployed to this cluster, use the cluster DNS endpoint: http://<prefect-server-service-name>.<namespace>.svc.cluster.local:<prefect-server-port>/api
+    # -- prefect API url (PREFECT_API_URL)
+    apiUrl: "https://prefect.localhost/api"
+
+    # ref: https://docs.prefect.io/v3/develop/settings-and-profiles#security-settings
+    basicAuth:
+      # -- enable basic auth for the worker, for an administrator/password combination. must be enabled on the server as well
+      enabled: false
+      # -- basic auth credentials in the format admin:<your-password> (no brackets)
+      authString: "admin:pass"
+      # -- name of existing secret containing basic auth credentials. takes precedence over authString. must contain a key `auth-string` with the value of the auth string
+      existingSecret: ""
+
+  # -- the number of old ReplicaSets to retain to allow rollback
+  revisionHistoryLimit: 10
+
+  # -- number of worker replicas to deploy, ignored if autoscaling is enabled
+  replicaCount: 1
+
+  resources:
+    # -- the requested resources for the worker container
+    requests:
+      memory: 256Mi
+      cpu: 100m
+      # ephemeral-storage:
+    # -- the requested limits for the worker container
+    limits:
+      memory: 1Gi
+      cpu: 1000m
+      # ephemeral-storage:

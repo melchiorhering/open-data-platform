@@ -1,33 +1,25 @@
-{{- if .Values.serviceAccount.create -}}
-apiVersion: v1
-kind: ServiceAccount
-metadata:
-  name: {{ .Values.serviceAccount.name }}
-  namespace: {{ .Release.Namespace }}
----
-{{- end }}
-{{- if .Values.rbac.create -}}
 apiVersion: rbac.authorization.k8s.io/v1
 kind: Role
 metadata:
-  name: {{ .Values.rbac.roleName }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "sail-spark.fullname" . }}
+  labels:
+    {{- include "sail-spark.labels" . | nindent 4 }}
 rules:
-  - apiGroups: [ "" ]
-    resources: [ "pods" ]
-    verbs: [ "*" ]
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["*"]
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: RoleBinding
 metadata:
-  name: {{ .Values.rbac.roleName }}
-  namespace: {{ .Release.Namespace }}
+  name: {{ include "sail-spark.fullname" . }}
+  labels:
+    {{- include "sail-spark.labels" . | nindent 4 }}
 subjects:
   - kind: ServiceAccount
-    name: {{ .Values.serviceAccount.name }}
+    name: {{ include "sail-spark.serviceAccountName" . }}
     namespace: {{ .Release.Namespace }}
 roleRef:
   kind: Role
-  name: {{ .Values.rbac.roleName }}
+  name: {{ include "sail-spark.fullname" . }}
   apiGroup: rbac.authorization.k8s.io
-{{- end }}
