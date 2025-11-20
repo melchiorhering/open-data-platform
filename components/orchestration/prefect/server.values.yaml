@@ -7,7 +7,7 @@ global:
 server:
   # Security: Basic Auth (Optional - currently disabled)
   basicAuth:
-    enabled: false
+    enabled: true
     authString: "admin:pass"
     existingSecret: ""
 
