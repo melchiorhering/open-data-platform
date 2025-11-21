@@ -104,7 +104,7 @@ helm upgrade --install cert-manager jetstack/cert-manager --version v${CERT_MANA
 if [ -d "$PATH_POLICIES" ] && find "$PATH_POLICIES" -maxdepth 1 -type f \( -name "*.yaml" -o -name "*.yml" \) | grep -q .; then
     echo "🛡️  Applying ZERO TRUST Lockdown..."
     kubectl apply -f "$PATH_POLICIES"
-    echo "   ✅ Zero Trust policies applied."
+    echo "✅  Zero Trust policies applied."
 else
     echo "⚠️  No policies found in $PATH_POLICIES. Skipping Lockdown."
 fi
