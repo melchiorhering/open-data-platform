@@ -42,6 +42,11 @@ By default, `kind` uses a simple CNI (`kindnet`). We are intentionally disabling
 - **Local IPAM:** Uses `CiliumLoadBalancerIPPool` to assign IPs from the `172.18.255.0/24` range (subnet of the Kind network).
 - **Purpose:** This ensures Gateways receive a valid IP, switching their status to `Programmed: True`, allowing Cilium to spawn the required Envoy proxies.
 
+- **Cluster Internal IPAM (Pod CIDR):** `10.244.0.0/16` — Used for Pod-to-Pod talk. Managed automatically by Cilium.
+
+- **Service External IPAM (LoadBalancer Pool):** `172.18.255.0/24` — Used for North-South traffic (Entering the cluster).
+  - Purpose: Allows the Gateway to grab an IP address that is technically "on the local Docker network," making it reachable by the host (via NodePort mapping) or other containers.
+
 ### 🔐 Identity & Certificates
 
 - **Cert-Manager:** **v1.19.0** installed for automated certificate management.

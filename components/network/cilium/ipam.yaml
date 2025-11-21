@@ -3,13 +3,11 @@ kind: CiliumLoadBalancerIPPool
 metadata:
   name: "kind-ip-pool"
 spec:
-  # We use the last /24 block of your 172.18.0.0/16 network
-  # Range: 172.18.255.1 - 172.18.255.254
-  cidrs:
+  # FIX: Changed 'cidrs' to 'blocks'
+  blocks:
     - cidr: "172.18.255.0/24"
 
 ---
-# We include the L2 Policy here so Cilium knows how to announce these IPs
 apiVersion: "cilium.io/v2alpha1"
 kind: CiliumL2AnnouncementPolicy
 metadata:
@@ -17,10 +15,9 @@ metadata:
 spec:
   nodeSelector:
     matchExpressions:
-      # In Kind, we usually just announce from the control-plane or all nodes
       - key: node-role.kubernetes.io/control-plane
         operator: Exists
   interfaces:
-    - "^eth" # Matches eth0 inside the Kind container
+    - "^eth"
   externalIPs: true
   loadBalancerIPs: true
