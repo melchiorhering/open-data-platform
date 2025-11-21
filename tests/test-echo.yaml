@@ -55,7 +55,6 @@ spec:
         - name: echo
           port: 80
 ---
-# The Zero Trust Policy (Required!)
 apiVersion: cilium.io/v2
 kind: CiliumNetworkPolicy
 metadata:
@@ -68,9 +67,8 @@ spec:
   ingress:
     - fromEndpoints:
         - matchLabels:
-            # IMPROVEMENT: Be specific!
-            # Only allow traffic from the 'internet-gateway', not 'private-gateway'.
-            gateway.networking.k8s.io/gateway-name: internet-gateway
+            # FIX: Use the specific ownership label Cilium attaches to the pod
+            io.cilium.gateway/owning-gateway: internet-gateway
             io.kubernetes.pod.namespace: default
       toPorts:
         - ports:

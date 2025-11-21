@@ -95,6 +95,10 @@ helm upgrade --install cilium cilium/cilium --version ${CILIUM_VERSION} \
     --set hubble.relay.enabled=true \
     --set hubble.ui.enabled=true
 
+echo "⏳ Waiting for Cilium to be ready..."
+kubectl -n kube-system rollout status deployment/cilium-operator
+kubectl -n kube-system rollout status ds/cilium --timeout=5m
+
 # --- Install Cert Manager ---
 echo "🔒 Installing Cert-Manager..."
 kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v${CERT_MANAGER}/cert-manager.crds.yaml
