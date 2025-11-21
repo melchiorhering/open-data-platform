@@ -27,7 +27,7 @@ PATH_CA_ISSUER="./components/network/cilium/ca-issuer.yaml"
 PATH_GATEWAY_CONFIG="./components/network/cilium/gateway/"
 PATH_IPAM_POOL="./components/network/cilium/ipam.yaml"
 PATH_L2_POLICY="./components/network/cilium/l2-policy.yaml"
-PATH_NODEPORT_PATCH="./components/network/cilium/gateway/nodeport-patch.yaml"
+PATH_NODEPORT_PATCH="./components/network/cilium/nodeport-patch.yaml"
 
 # ====================================================================
 # 2. PRE-FLIGHT CHECKS
@@ -66,7 +66,14 @@ helm repo update > /dev/null
 
 # --- Gateway API CRDs ---
 echo "🔗 Installing Gateway API CRDs (Standard)..."
-kubectl apply --server-side -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/v${GATEWAY_API_VERSION}/standard-install.yaml"
+kubectl apply --server-side -f "https://github.com/kubernetes-sigs/gateway-api/releases/download/v${GATEWAY_API_VERSION}/experimental-install.yaml"
+
+# --- Verify CRDs ---
+echo "   ... Verifying TLSRoute CRD exists"
+if ! kubectl get crd tlsroutes.gateway.networking.k8s.io &> /dev/null; then
+   echo "❌ ERROR: TLSRoute CRD is missing! Cilium will crash without this."
+   exit 1
+fi
 
 # --- Install Cilium ---
 echo "🐝 Installing Cilium (v${CILIUM_VERSION})..."
@@ -109,10 +116,19 @@ else
     echo "⚠️  No policies found in $PATH_POLICIES. Skipping Lockdown."
 fi
 
-# --- Setup Gateway Infra ---
-echo "📝 Creating CA & Gateway..."
+# --- Setup Gateway Infra (WITH CA CHECK) ---
+echo "📝 Creating CA Infrastructure..."
 kubectl apply -f "$PATH_CA_ISSUER"
-sleep 2
+
+echo "⏳ Waiting for Root CA Secret to be generated..."
+# This loop prevents the 'Secret not found' error
+while ! kubectl get secret ca -n cert-manager &> /dev/null; do
+    sleep 2
+    echo "   ... waiting for keypair generation"
+done
+echo "✅ Root CA Secret exists."
+
+echo "🚪 Applying Gateway Configuration..."
 kubectl apply -f "$PATH_GATEWAY_CONFIG"
 
 # --- Cluster Entrance (L2 & Patching) ---
@@ -133,14 +149,43 @@ while ! kubectl get svc "$GATEWAY_SERVICE_NAME" -n "$GATEWAY_NAMESPACE" &> /dev/
     sleep 2
 done
 
-# Apply Patch
-kubectl patch svc "$GATEWAY_SERVICE_NAME" -n "$GATEWAY_NAMESPACE" --patch-file "$PATH_NODEPORT_PATCH"
+# ---------------------------------------------------------
+# ROBUST PATCHING LOGIC (Retries until success)
+# ---------------------------------------------------------
+echo "   Applying NodePort Patch (with retries)..."
+
+MAX_RETRIES=5
+count=0
+success=false
+
+while [ $count -lt $MAX_RETRIES ]; do
+    # Apply the patch
+    kubectl patch svc "$GATEWAY_SERVICE_NAME" -n "$GATEWAY_NAMESPACE" --patch-file "$PATH_NODEPORT_PATCH" > /dev/null 2>&1
+
+    # Verify immediately
+    if kubectl get svc "$GATEWAY_SERVICE_NAME" -n "$GATEWAY_NAMESPACE" -o yaml | grep -q "nodePort: 30443"; then
+        success=true
+        break
+    fi
+
+    echo "   ... Patch not yet effective. Retrying ($((count+1))/$MAX_RETRIES)..."
+    sleep 3
+    count=$((count+1))
+done
+
+if [ "$success" = true ]; then
+    echo "✅ Verification Successful: NodePorts 30080/30443 are active."
+else
+    echo "❌ ERROR: Patch failed after $MAX_RETRIES attempts."
+    echo "   Dumping Service YAML for debugging:"
+    kubectl get svc "$GATEWAY_SERVICE_NAME" -n "$GATEWAY_NAMESPACE" -o yaml
+    exit 1
+fi
 
 echo "✅ Gateway is now bound to Host Ports 80/443"
 
 # --- Final Output ---
-# Wait for IP assignment for pretty output
-echo "⏳ Waiting for Gateway IP..."
+echo "⏳ Waiting for Gateway IP assignment..."
 while [ -z "$(kubectl get svc "$GATEWAY_SERVICE_NAME" -n "$GATEWAY_NAMESPACE" -o jsonpath='{.status.loadBalancer.ingress[0].ip}')" ]; do
     sleep 1
 done

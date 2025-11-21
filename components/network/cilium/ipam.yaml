@@ -3,9 +3,10 @@ kind: CiliumLoadBalancerIPPool
 metadata:
   name: "kind-ip-pool"
 spec:
-  # FIX: Changed 'cidrs' to 'blocks'
   blocks:
-    - cidr: "172.18.255.0/24"
+    # Use a specific range to avoid .0
+    - start: "172.18.255.1"
+      stop: "172.18.255.254"
 
 ---
 apiVersion: "cilium.io/v2alpha1"
