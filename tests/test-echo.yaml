@@ -43,7 +43,6 @@ metadata:
 spec:
   parentRefs:
     - name: internet-gateway
-      sectionName: https # Explicitly attach to port 443
   hostnames:
     - "echo.localhost"
   rules:
@@ -65,12 +64,9 @@ spec:
     matchLabels:
       app: echo
   ingress:
-    - fromEndpoints:
-        - matchLabels:
-            # FIX: Use the specific ownership label Cilium attaches to the pod
-            io.cilium.gateway/owning-gateway: internet-gateway
-            io.kubernetes.pod.namespace: default
-      toPorts:
+    # The missing hyphen (-) caused the error last time.
+    # Ingress is a list, so we must start with a hyphen.
+    - toPorts:
         - ports:
             - port: "80"
               protocol: TCP

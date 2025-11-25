@@ -1,24 +1,13 @@
 apiVersion: "cilium.io/v2alpha1"
-kind: CiliumLoadBalancerIPPool
-metadata:
-  name: "kind-ip-pool"
-spec:
-  blocks:
-    # Use a specific range to avoid .0
-    - start: "172.18.255.1"
-      stop: "172.18.255.254"
-
----
-apiVersion: "cilium.io/v2alpha1"
 kind: CiliumL2AnnouncementPolicy
 metadata:
-  name: "kind-l2-policy"
+  name: allow-all-l2-announcements
 spec:
   nodeSelector:
     matchExpressions:
       - key: node-role.kubernetes.io/control-plane
         operator: Exists
   interfaces:
-    - "^eth"
+    - "^eth[0-9]+"
   externalIPs: true
   loadBalancerIPs: true

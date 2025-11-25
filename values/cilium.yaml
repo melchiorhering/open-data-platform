@@ -1,0 +1,15 @@
+ipam:
+  mode: "kubernetes"
+kubeProxyReplacement: true
+gatewayAPI:
+  enabled: true
+l2announcements:
+  enabled: true
+  leaseDuration: 15s
+  leaseRenewDeadline: 5s
+  leaseRetryPeriod: 2s
+externalIPs:
+  enabled: true
+hubble:
+  relay: { enabled: true }
+  ui: { enabled: true }

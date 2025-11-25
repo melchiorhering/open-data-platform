@@ -1,0 +1,74 @@
+# helmfile.gotmpl (Renamed from .yaml)
+
+environments:
+  default:
+    values:
+      - versions:
+          cilium: "1.18.4"
+          gatewayApi: "1.4.0"
+          certManager: "1.19.0"
+      - cluster:
+          # Outer single quotes, inner double quotes
+          apiServerIp: '{{ requiredEnv "KIND_API_IP" }}'
+          apiServerPort: 6443
+
+---
+repositories:
+  - name: cilium
+    url: https://helm.cilium.io/
+  - name: jetstack
+    url: https://charts.jetstack.io
+
+releases:
+  # --- CILIUM ---
+  - name: cilium
+    chart: cilium/cilium
+    version: "{{ .Values.versions.cilium }}"
+    namespace: kube-system
+    createNamespace: true
+    wait: true
+    hooks:
+      - events: ["presync"]
+        command: "kubectl"
+        args:
+          [
+            "apply",
+            "--server-side",
+            "-f",
+            "https://github.com/kubernetes-sigs/gateway-api/releases/download/v{{ .Values.versions.gatewayApi }}/experimental-install.yaml",
+          ]
+    values:
+      - values/cilium.yaml
+      # These will now be rendered correctly because of the .gotmpl extension
+      - k8sServiceHost: "{{ .Values.cluster.apiServerIp }}"
+      - k8sServicePort: "{{ .Values.cluster.apiServerPort }}"
+
+  # --- CERT MANAGER ---
+  - name: cert-manager
+    chart: jetstack/cert-manager
+    version: "{{ .Values.versions.certManager }}"
+    namespace: cert-manager
+    createNamespace: true
+    wait: true
+    hooks:
+      - events: ["presync"]
+        command: "kubectl"
+        args:
+          [
+            "apply",
+            "-f",
+            "https://github.com/cert-manager/cert-manager/releases/download/v{{ .Values.versions.certManager }}/cert-manager.crds.yaml",
+          ]
+    values:
+      - values/cert-manager.yaml
+
+  # --- CLUSTER CONFIG ---
+  - name: cluster-config
+    chart: ./charts/cluster-config
+    namespace: default
+    labels:
+      group: config
+    needs:
+      - kube-system/cilium
+      - cert-manager/cert-manager
+    disableValidation: true
