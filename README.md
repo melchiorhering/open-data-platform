@@ -95,49 +95,90 @@ For visualizing, monitoring, and governing the data.
 | **[Apache Superset](https://superset.apache.org/)** | Business Intelligence | Data visualization, dashboards, and BI.               |
 | **[Apache Nifi](https://nifi.apache.org/)**         | Data Flow             | Visual data-flow management, governance, and lineage. |
 
-## 🏁 Getting Started
+Here is a complete, polished Markdown section you can paste directly into your `README.md`. It covers prerequisites, the startup sequence, and how to use the development tunnel.
 
-This repository is organized to separate local development environments from production configurations.
+---
 
-To spin up a complete, multi-node version of this platform on your local machine for development and testing, please see the:
+## 🛠️ Local Development
 
-**[➡️ Local Development Setup Guide](./local/README.md)**
+This project uses a local **Kind** cluster powered by **Cilium** and **Gateway API**. Due to Docker networking limitations on macOS, we use a bridge pattern to access services locally via `https://*.localhost`.
 
-## 📁 Repository Structure (Future)
+### 📋 Prerequisites
 
-```txt
-├── local/ # Local development environment (Kind, Cilium, etc.)
-├── infrastructure/ # (Coming Soon) IaC (Terraform/Pulumi) for production
-├── services/ # (Coming Soon) Helm charts / K8s manifests for each platform tool
-└── pipelines/ # (Coming Soon) Example DAGs and data pipeline definitions
-```
+Ensure you have the following tools installed:
 
-## Local Development
+- **Docker Desktop**
+- **Just** (`brew install just`)
+- **Kubectl** (`brew install kubectl`)
+- **Helmfile** (`brew install helmfile`)
+- **Helm** (`brew install helm`)
 
-### Perequisites
+### 🚀 Quick Start
 
-- Kind
-- Helm
-- Cilium CLI
+1.  **Initialize the Cluster**
+    Creates the Kind cluster and prepares the nodes.
 
-### Kind
+    ```bash
+    just up
+    ```
 
-Create the a cluster with the `kind-config.yml` for local development
+2.  **Install Infrastructure**
+    Deploys Cilium, Cert-Manager, and the Gateway configuration via Helmfile.
+
+    ```bash
+    just apply
+    ```
+
+3.  **Deploy Applications**
+    Installs the demo applications (Echo Server) and HTTPRoutes.
+
+    ```bash
+    just deploy-apps
+    ```
+
+### 🌐 Accessing Services (The Tunnel)
+
+To access your services from your browser (e.g., `https://echo.localhost`), you must open a bridge tunnel. This bypasses NodePort limitations on macOS.
+
+1.  **Open the Tunnel** in a dedicated terminal window:
+
+    ```bash
+    just connect
+    ```
+
+    _(Note: This requires `sudo` to bind to your local port 443)._
+
+2.  **Browse:**
+    Open your browser to **[https://echo.localhost](https://www.google.com/search?q=https://echo.localhost)**.
+
+    _You should see the success message from the Echo server via the Cilium Gateway._
+
+### ✅ Verification
+
+To run a full end-to-end automated test suite (which spins up a temporary bridge, curls the gateway, and cleans up):
 
 ```bash
-kind create cluster --config=kind-config.yml
+just test
 ```
 
-Setup Cilium & Hubble using helm:
+### 🧹 Teardown
+
+To destroy the cluster and clean up all resources:
 
 ```bash
-# Run the cluster.config.sh script to set up Cilium and Hubble
-./cluster.config.sh
+just down
 ```
 
-## Bare Metal Development
+---
 
-For bare metal development, consider using one of the following tools to create a local Kubernetes cluster to fully test the platform:
+### 📖 Command Reference
 
-- [Colima](https://github.com/abiosoft/colima)
-- [Containerlab](https://containerlab.dev/)
+| Command            | Description                                                   |
+| :----------------- | :------------------------------------------------------------ |
+| `just up`          | Creates the Kind cluster (if missing).                        |
+| `just apply`       | Installs system infrastructure (Cilium, Certs, Gateway).      |
+| `just deploy-apps` | Installs application workloads and Routes.                    |
+| `just connect`     | **Interactive Mode:** Opens a tunnel to access `*.localhost`. |
+| `just test`        | **CI Mode:** Runs automated connectivity tests.               |
+| `just status`      | Shows the status of Gateways and Pods.                        |
+| `just down`        | Destroys the local cluster.                                   |

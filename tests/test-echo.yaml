@@ -1,49 +1,60 @@
+# ---------------------------------------------------------
+# 1. The Application (A simple Echo Server)
+# ---------------------------------------------------------
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: echo
+  name: test-echo
   namespace: default
   labels:
-    app: echo
+    app: test-echo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: echo
+      app: test-echo
   template:
     metadata:
       labels:
-        app: echo
+        app: test-echo
     spec:
       containers:
         - name: echo
-          image: ealen/echo-server:latest
+          image: hashicorp/http-echo
+          # This message proves we hit the specific pod
+          args:
+            - "-text=🎉 SUCCESS: Infrastructure is working! (Echo from Cilium Gateway)"
           ports:
-            - containerPort: 80
+            - containerPort: 5678
 ---
+# ---------------------------------------------------------
+# 2. The Service (ClusterIP)
+# ---------------------------------------------------------
 apiVersion: v1
 kind: Service
 metadata:
-  name: echo
+  name: test-echo
   namespace: default
-  labels:
-    app: echo
 spec:
   selector:
-    app: echo
+    app: test-echo
   ports:
     - port: 80
-      targetPort: 80
+      targetPort: 5678
 ---
-apiVersion: gateway.networking.k8s.io/v1
+# ---------------------------------------------------------
+# 3. The Route (Connecting Gateway -> Service)
+# ---------------------------------------------------------
+apiVersion: gateway.networking.k8s.io/v1beta1
 kind: HTTPRoute
 metadata:
-  name: echo-route
+  name: test-echo-route
   namespace: default
 spec:
   parentRefs:
     - name: internet-gateway
   hostnames:
+    # We use a subdomain to verify wildcard DNS/Certs work
     - "echo.localhost"
   rules:
     - matches:
@@ -51,22 +62,5 @@ spec:
             type: PathPrefix
             value: /
       backendRefs:
-        - name: echo
+        - name: test-echo
           port: 80
----
-apiVersion: cilium.io/v2
-kind: CiliumNetworkPolicy
-metadata:
-  name: allow-echo-ingress
-  namespace: default
-spec:
-  endpointSelector:
-    matchLabels:
-      app: echo
-  ingress:
-    # The missing hyphen (-) caused the error last time.
-    # Ingress is a list, so we must start with a hyphen.
-    - toPorts:
-        - ports:
-            - port: "80"
-              protocol: TCP
