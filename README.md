@@ -149,7 +149,7 @@ To access your services from your browser (e.g., `https://echo.localhost`), you 
     _(Note: This requires `sudo` to bind to your local port 443)._
 
 2.  **Browse:**
-    Open your browser to **[https://echo.localhost](https://www.google.com/search?q=https://echo.localhost)**.
+    Open your browser to **[https://echo.localhost](https://echo.localhost)**.
 
     _You should see the success message from the Echo server via the Cilium Gateway._
 
