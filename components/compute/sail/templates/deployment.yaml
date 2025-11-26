@@ -38,10 +38,12 @@ spec:
                   fieldPath: metadata.name
             - name: SAIL_KUBERNETES__WORKER_SERVICE_ACCOUNT_NAME
               value: {{ include "sail-spark.serviceAccountName" . }}
+
+            # --- FIX 1: Use Stable Service DNS instead of Pod IP ---
+            # This tells workers to connect to the Driver via the Service,
+            # which is much more reliable than raw Pod IPs.
             - name: SAIL_CLUSTER__DRIVER_EXTERNAL_HOST
-              valueFrom:
-                fieldRef:
-                  fieldPath: status.podIP
+              value: "{{ include "sail-spark.fullname" . }}.{{ .Release.Namespace }}.svc"
 
             {{- /* Standard Env Vars from values.yaml */}}
             {{- range $key, $val := .Values.driver.env }}
@@ -52,7 +54,7 @@ spec:
             - name: SAIL_KUBERNETES__IMAGE
               value: "{{ default .Values.image.repository .Values.worker.image }}:{{ default .Values.image.tag .Values.worker.tag | default .Chart.AppVersion }}"
 
-            {{- /* DYNAMIC WORKER TEMPLATE GENERATION */}}
+            {{- /* FIX 2: Inject imagePullPolicy into Worker Template */}}
             - name: SAIL_KUBERNETES__WORKER_POD_TEMPLATE
               value: |
                 {

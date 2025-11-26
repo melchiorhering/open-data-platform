@@ -2,9 +2,9 @@
 # IMAGE CONFIGURATION
 # ------------------------------------------------------------------
 image:
-  # Default to the remote repository (Change this to your actual remote repo)
+  # Default to the local image for your dev setup
   repository: sail
-  # Default pull policy
+  # CRITICAL: "Never" forces K8s to use the image loaded via 'just build-sail'
   pullPolicy: Never
   tag: "latest"
 
@@ -35,6 +35,7 @@ driver:
   env:
     RUST_LOG: info
     SAIL_MODE: kubernetes-cluster
+    # Driver listens on all interfaces inside the pod
     SAIL_CLUSTER__DRIVER_LISTEN_HOST: "0.0.0.0"
 
   volumes: []
@@ -57,5 +58,5 @@ gateway:
   # Placeholder defaults (Helmfile injects the real ones)
   name: internet-gateway
   namespace: default
-  # Hostname for routing (e.g. sail.localhost)
+  # Hostname for routing
   host: "sail.localhost"

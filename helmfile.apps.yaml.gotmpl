@@ -30,10 +30,7 @@ releases:
       # 1. Load Chart Defaults (Remote Image settings)
       - ./components/compute/sail/values.yaml
 
-      # 2. Load Local Overrides (Sets image: sail, pullPolicy: Never)
-      - values/sail.yaml
-
-      # 3. Inject Global Gateway Context
+      # 2. Inject Global Gateway Context
       - gateway:
           name: "{{ .Values.gateway.name }}"
           namespace: "{{ .Values.gateway.namespace }}"
