@@ -1,0 +1,27 @@
+# ------------------------------------------------------------------
+# SAIL LOCAL DEV CONFIGURATION
+# ------------------------------------------------------------------
+
+# 1. Image Configuration (Local Mode)
+image:
+  # Matches the name used in 'just build-sail': docker build -t sail:latest
+  repository: sail
+  tag: "latest"
+
+  # CRITICAL: Forces K8s to use the image loaded into Kind.
+  # Prevents it from trying to pull "sail" from Docker Hub.
+  pullPolicy: Never
+
+# 2. Gateway Configuration
+# Define the local domain for this app.
+gateway:
+  host: "sail.localhost"
+
+# 3. Driver Configuration
+driver:
+  # Standard dev settings
+  replicaCount: 1
+  env:
+    RUST_LOG: info
+    SAIL_MODE: kubernetes-cluster
+    SAIL_CLUSTER__DRIVER_LISTEN_HOST: "0.0.0.0"

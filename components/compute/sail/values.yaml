@@ -3,9 +3,9 @@
 # ------------------------------------------------------------------
 image:
   # Default to the remote repository (Change this to your actual remote repo)
-  repository: ghcr.io/lakehq/sail
+  repository: sail
   # Default pull policy
-  pullPolicy: IfNotPresent
+  pullPolicy: Never
   tag: "latest"
 
 imagePullSecrets: []

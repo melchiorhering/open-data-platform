@@ -1,5 +1,5 @@
 apiVersion: v2
-name: sail-spark
+name: sail
 description: A Helm chart for Sail (Rust-based Spark) Server
 type: application
 version: 0.1.0

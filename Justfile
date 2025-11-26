@@ -82,7 +82,7 @@ status:
 # Run this once so you have something to look at!
 deploy-apps:
     @echo "🚀 Deploying Demo Applications..."
-    @kubectl apply -f tests/test-echo.yaml
+    @kubectl apply -f tests/kubernetes/test-echo.yaml
     @kubectl rollout status deployment/test-echo -n default --timeout=60s
 
 # ----------------------------------------------------------------------

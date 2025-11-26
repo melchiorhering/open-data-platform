@@ -60,6 +60,7 @@ spec:
                     "containers": [
                       {
                         "name": "worker",
+                        "imagePullPolicy": "{{ .Values.image.pullPolicy }}",
                         "resources": {{ toJson .Values.worker.resources }},
                         "volumeMounts": {{ toJson .Values.worker.volumeMounts }}
                       }

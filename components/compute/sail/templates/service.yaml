@@ -11,5 +11,6 @@ spec:
       targetPort: {{ .Values.driver.service.port }}
       protocol: TCP
       name: grpc
+      appProtocol: grpc
   selector:
     {{- include "sail-spark.selectorLabels" . | nindent 4 }}
