@@ -1,0 +1,36 @@
+{{- if .Values.gateway -}}
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: {{ .Release.Name }}-route
+  namespace: {{ .Release.Namespace }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+      namespace: {{ .Values.gateway.namespace }}
+
+  hostnames:
+    - {{ .Values.gateway.hosts.s3 | quote }}
+    - {{ .Values.gateway.hosts.console | quote }}
+
+  rules:
+    # Rule 1: S3 API Traffic
+    - matches:
+        - headers:
+            - type: Exact
+              name: "Host"  # <--- CHANGED from :authority
+              value: {{ .Values.gateway.hosts.s3 | quote }}
+      backendRefs:
+        - name: {{ include "rustfs.fullname" . }}-svc
+          port: {{ .Values.config.s3Port }}
+
+    # Rule 2: Console UI Traffic
+    - matches:
+        - headers:
+            - type: Exact
+              name: "Host"  # <--- CHANGED from :authority
+              value: {{ .Values.gateway.hosts.console | quote }}
+      backendRefs:
+        - name: {{ include "rustfs.fullname" . }}-svc
+          port: {{ .Values.config.consolePort }}
+{{- end -}}

@@ -1,1 +1,2 @@
 components/**/templates/**/*
+*.yaml.gotmpl

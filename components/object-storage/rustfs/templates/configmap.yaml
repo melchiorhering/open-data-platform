@@ -14,4 +14,9 @@ data:
   # --- THE CLUSTERING KEY ---
   # It builds the string: "http://rustfs-{0...3}.rustfs-headless.default.svc.cluster.local:9000/data"
   # This tells each pod how to find its peers.
+  # If > 1, use the network cluster mode.
+  {{- if eq (int .Values.replicaCount) 1 }}
+  RUSTFS_VOLUMES: "/data"
+  {{- else }}
   RUSTFS_VOLUMES: "http://{{ include "rustfs.fullname" . }}-{0...{{ sub .Values.replicaCount 1 }}}.{{ include "rustfs.fullname" . }}-headless.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.config.s3Port }}/data"
+  {{- end }}

@@ -1,0 +1,73 @@
+# ------------------------------------------------------------------
+# INFRASTRUCTURE LAYER
+# ------------------------------------------------------------------
+# This file is called by the Root 'helmfile.yaml'
+# It receives .Values from the root (versions, cluster IP, etc.)
+
+repositories:
+  - name: cilium
+    url: https://helm.cilium.io/
+  - name: jetstack
+    url: https://charts.jetstack.io
+
+releases:
+  # ------------------------------------------------------------------
+  # 1. CILIUM (Networking & Gateway)
+  # ------------------------------------------------------------------
+  - name: cilium
+    chart: cilium/cilium
+    # Uses version passed from Root
+    version: "{{ .Values.versions.cilium }}"
+    namespace: kube-system
+    createNamespace: true
+    wait: true
+    hooks:
+      - events: ["presync"]
+        command: "kubectl"
+        args:
+          [
+            "apply",
+            "--server-side",
+            "-f",
+            "https://github.com/kubernetes-sigs/gateway-api/releases/download/v{{ .Values.versions.gatewayApi }}/experimental-install.yaml",
+          ]
+    values:
+      - values/cilium.yaml
+      # Injects dynamic IP passed from Root
+      - k8sServiceHost: "{{ .Values.cluster.apiServerIp }}"
+      - k8sServicePort: "{{ .Values.cluster.apiServerPort }}"
+
+  # ------------------------------------------------------------------
+  # 2. CERT MANAGER (TLS)
+  # ------------------------------------------------------------------
+  - name: cert-manager
+    chart: jetstack/cert-manager
+    version: "{{ .Values.versions.certManager }}"
+    namespace: cert-manager
+    createNamespace: true
+    wait: true
+    hooks:
+      - events: ["presync"]
+        command: "kubectl"
+        args:
+          [
+            "apply",
+            "-f",
+            "https://github.com/cert-manager/cert-manager/releases/download/v{{ .Values.versions.certManager }}/cert-manager.crds.yaml",
+          ]
+    values:
+      - values/cert-manager.yaml
+
+  # ------------------------------------------------------------------
+  # 3. CLUSTER CONFIG (Local Glue: Gateway, Pools, Certs)
+  # ------------------------------------------------------------------
+  - name: cluster-config
+    chart: ./charts/cluster-config
+    namespace: default
+    labels:
+      group: config
+    needs:
+      - kube-system/cilium
+      - cert-manager/cert-manager
+    # Disable validation so it doesn't crash before CRDs (Gateway/Cert) are ready
+    disableValidation: true

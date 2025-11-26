@@ -1,0 +1,20 @@
+# helmfile.apps.yaml
+
+releases:
+  # ------------------------------------------------------------------
+  # RUSTFS (Object Storage)
+  # ------------------------------------------------------------------
+  - name: rustfs
+    namespace: default
+    chart: ./components/object-storage/rustfs
+    labels:
+      group: apps
+    values:
+      # 1. Load your local overrides (replicaCount, hostnames)
+      - values/rustfs.yaml
+
+      # 2. Inject the Global Gateway Context
+      #    These values are available because we passed them from Root
+      - gateway:
+          name: "{{ .Values.gateway.name }}"
+          namespace: "{{ .Values.gateway.namespace }}"

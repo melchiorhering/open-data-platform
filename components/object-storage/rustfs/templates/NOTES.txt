@@ -9,73 +9,39 @@ Your RustFS instance has been deployed.
    {{- $accessKey := "" }}
    {{- $secretKey := "" }}
 
-   {{- /* Only try to decode the keys IF the secret was found (i.e., not during lint). */}}
+   {{- /* Only try to decode the keys IF the secret was found. */}}
    {{- if $secret }}
      {{- $accessKey = (index $secret.data "RUSTFS_ACCESS_KEY") | b64dec }}
      {{- $secretKey = (index $secret.data "RUSTFS_SECRET_KEY") | b64dec }}
    {{- end }}
 
    Access Key:
-   {{- /* If $accessKey is empty (which it will be during lint), show the fallback command. */}}
+   {{- /* Fallback command if lookup fails (e.g., dry-run) */}}
    {{- $accessKey | default (printf "echo $(kubectl get secret %s-secret -n %s -o jsonpath='{.data.RUSTFS_ACCESS_KEY}' | base64 -d)" (include "rustfs.fullname" .) .Release.Namespace) }}
 
    Secret Key:
-   {{- /* If $secretKey is empty (which it will be during lint), show the fallback command. */}}
+   {{- /* Fallback command if lookup fails */}}
    {{- $secretKey | default (printf "echo $(kubectl get secret %s-secret -n %s -o jsonpath='{.data.RUSTFS_SECRET_KEY}' | base64 -d)" (include "rustfs.fullname" .) .Release.Namespace) }}
-
-   (If the keys show as <nil> or commands, the lookup failed. Please run the echo commands.)
 
 2. **Access the S3 API**
 
-   {{- if .Values.ingress.enabled }}
-   The S3 API is exposed via Ingress at:
-   **http://{{ .Values.ingress.s3.host }}**
+   The S3 API is exposed via the Cilium Gateway.
 
-   To access this, you must have an Ingress controller running (e.g., NGINX)
-   and have DNS configured for `{{ .Values.ingress.s3.host }}` to point
-   to your Ingress controller's external IP.
+   **URL:** https://{{ .Values.gateway.hosts.s3 }}
 
-   For local testing (e.g., Docker Desktop), add this to your `/etc/hosts` file:
-   127.0.0.1  {{ .Values.ingress.s3.host }}
+   To access this locally, ensure your tunnel is running (`just connect`).
 
-   Then configure your S3 client:
-   mc alias set myrustfs http://{{ .Values.ingress.s3.host }} <ACCESS_KEY> <SECRET_KEY>
-
-   {{- else }}
-   The S3 API is not exposed via Ingress. You can access it via port-forwarding:
-
-   1. Run the port-forward command:
-      {{- $name := include "rustfs.fullname" . }}
-      {{- $port := .Values.config.s3Port }}
-      kubectl port-forward svc/{{ $name }}-svc 9000:{{ $port }} &
-
-   2. Configure your S3 client:
-      mc alias set myrustfs http://localhost:9000 <ACCESS_KEY> <SECRET_KEY>
-   {{- end }}
+   **Configure MinIO Client (mc):**
+   mc alias set myrustfs https://{{ .Values.gateway.hosts.s3 }} <ACCESS_KEY> <SECRET_KEY>
 
 3. **Access the Console**
 
    {{- if .Values.config.consoleEnable }}
-   {{- if .Values.ingress.enabled }}
-   The Console is exposed via Ingress at:
-   **http://{{ .Values.ingress.console.host }}**
+   The Console is exposed via the Cilium Gateway.
 
-   To access this, ensure your DNS is configured (see step 2) or add
-   this entry to your `/etc/hosts` file:
-   127.0.0.1  {{ .Values.ingress.console.host }}
+   **URL:** https://{{ .Values.gateway.hosts.console }}
 
-   Then open http://{{ .Values.ingress.console.host }} in your browser.
-
-   {{- else }}
-   The Console is not exposed via Ingress. You can access it via port-forwarding:
-
-   1. Run the port-forward command:
-      {{- $name := include "rustfs.fullname" . }}
-      {{- $consolePort := .Values.config.consolePort }}
-      kubectl port-forward svc/{{ $name }}-svc 9001:{{ $consolePort }} &
-
-   2. Open http://localhost:9001 in your browser.
-   {{- end }}
+   To access this locally, ensure your tunnel is running (`just connect`), then open the URL in your browser.
    {{- else }}
    The console is disabled. Set `config.consoleEnable=true` in values.yaml to enable it.
    {{- end }}

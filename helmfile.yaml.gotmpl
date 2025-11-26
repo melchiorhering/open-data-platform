@@ -1,5 +1,9 @@
-# helmfile.gotmpl (Renamed from .yaml)
+# helmfile.yaml.gotmpl
 
+# ------------------------------------------------------------------
+# PART 1: STATE DEFINITION
+# Helmfile reads this first to populate .Values
+# ------------------------------------------------------------------
 environments:
   default:
     values:
@@ -8,67 +12,26 @@ environments:
           gatewayApi: "1.4.0"
           certManager: "1.19.0"
       - cluster:
-          # Outer single quotes, inner double quotes
-          apiServerIp: '{{ requiredEnv "KIND_API_IP" }}'
+          name: local
+          apiServerIp: '{{ env "KIND_API_IP" | default "127.0.0.1" }}'
           apiServerPort: 6443
+      - gateway:
+          name: internet-gateway
+          namespace: default
 
+# ------------------------------------------------------------------
+# PART 2: EXECUTION LOGIC
+# Helmfile renders this second, so .Values is now available!
+# ------------------------------------------------------------------
 ---
-repositories:
-  - name: cilium
-    url: https://helm.cilium.io/
-  - name: jetstack
-    url: https://charts.jetstack.io
-
-releases:
-  # --- CILIUM ---
-  - name: cilium
-    chart: cilium/cilium
-    version: "{{ .Values.versions.cilium }}"
-    namespace: kube-system
-    createNamespace: true
-    wait: true
-    hooks:
-      - events: ["presync"]
-        command: "kubectl"
-        args:
-          [
-            "apply",
-            "--server-side",
-            "-f",
-            "https://github.com/kubernetes-sigs/gateway-api/releases/download/v{{ .Values.versions.gatewayApi }}/experimental-install.yaml",
-          ]
+helmfiles:
+  # LAYER 1: Infrastructure
+  - path: helmfile.infra.yaml.gotmpl
     values:
-      - values/cilium.yaml
-      # These will now be rendered correctly because of the .gotmpl extension
-      - k8sServiceHost: "{{ .Values.cluster.apiServerIp }}"
-      - k8sServicePort: "{{ .Values.cluster.apiServerPort }}"
+      # Now .Values contains the data from Part 1
+      - {{ .Values | toYaml | nindent 8 }}
 
-  # --- CERT MANAGER ---
-  - name: cert-manager
-    chart: jetstack/cert-manager
-    version: "{{ .Values.versions.certManager }}"
-    namespace: cert-manager
-    createNamespace: true
-    wait: true
-    hooks:
-      - events: ["presync"]
-        command: "kubectl"
-        args:
-          [
-            "apply",
-            "-f",
-            "https://github.com/cert-manager/cert-manager/releases/download/v{{ .Values.versions.certManager }}/cert-manager.crds.yaml",
-          ]
+  # LAYER 2: Applications
+  - path: helmfile.apps.yaml.gotmpl
     values:
-      - values/cert-manager.yaml
-
-  # --- CLUSTER CONFIG ---
-  - name: cluster-config
-    chart: ./charts/cluster-config
-    namespace: default
-    labels:
-      group: config
-    needs:
-      - kube-system/cilium
-      - cert-manager/cert-manager
-    disableValidation: true
+      - {{ .Values | toYaml | nindent 8 }}
