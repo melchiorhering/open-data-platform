@@ -1,0 +1,12 @@
+{
+  "files.associations": {
+    "*.gotmpl": "helm", // helmfile
+    "helmfile.yaml": "helm" // helmfile
+  },
+  "[helm]": {
+    "editor.defaultFormatter": "ms-kubernetes-tools.vscode-kubernetes-tools"
+  },
+  "go-template.patterns": [
+    "**/*.{yaml,yml,yaml.gotmpl,yml.gotmpl,gotmpl,gotpl}"
+  ]
+}
