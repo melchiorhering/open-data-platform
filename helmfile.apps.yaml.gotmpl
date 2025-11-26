@@ -18,3 +18,19 @@ releases:
       - gateway:
           name: "{{ .Values.gateway.name }}"
           namespace: "{{ .Values.gateway.namespace }}"
+
+  - name: sail
+    namespace: default
+    chart: ./components/compute/sail
+    labels:
+      group: apps
+    values:
+    # 1. Load your local overrides (replicaCount, hostnames)
+    - values/sail.yaml
+
+    # 2. Inject the Global Gateway Context
+    #    These values are available because we passed them from Root
+    - gateway:
+        name: "{{ .Values.gateway.name }}"
+        namespace: "{{ .Values.gateway.namespace }}"
+        host: "sail.localhost"

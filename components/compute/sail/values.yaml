@@ -1,5 +1,10 @@
+# ------------------------------------------------------------------
+# IMAGE CONFIGURATION
+# ------------------------------------------------------------------
 image:
-  repository: sail
+  # Default to the remote repository (Change this to your actual remote repo)
+  repository: ghcr.io/lakehq/sail
+  # Default pull policy
   pullPolicy: IfNotPresent
   tag: "latest"
 
@@ -7,52 +12,50 @@ imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
 
+# ------------------------------------------------------------------
+# SERVICE ACCOUNT
+# ------------------------------------------------------------------
 serviceAccount:
   create: true
   annotations: {}
-  # If not set and create is true, a name is generated using the fullname template
   name: "sail-user"
 
-# Configuration for the Sail Driver (Server)
+# ------------------------------------------------------------------
+# DRIVER (SERVER) CONFIGURATION
+# ------------------------------------------------------------------
 driver:
-  replicaCount: 1 # Spark sessions are tied to the pod, usually kept at 1
+  replicaCount: 1
   service:
     type: ClusterIP
     port: 50051
 
-  resources:
-    {}
-    # limits:
-    #   cpu: 100m
-    #   memory: 128Mi
-    # requests:
-    #   cpu: 100m
-    #   memory: 128Mi
+  resources: {}
 
-  # Env vars specific to the driver logic
+  # Environment Variables for the Driver
   env:
     RUST_LOG: info
     SAIL_MODE: kubernetes-cluster
     SAIL_CLUSTER__DRIVER_LISTEN_HOST: "0.0.0.0"
 
-  # Volumes to mount on the Driver Pod
   volumes: []
-  # Example for local dev (mirrors your patch):
-  # - name: data
-  #   hostPath:
-  #     path: /tmp/sail
-  #     type: DirectoryOrCreate
-
   volumeMounts: []
-  # - name: data
-  #   mountPath: /tmp/sail
 
-# Configuration for the Sail Workers (spawned by the driver)
+# ------------------------------------------------------------------
+# WORKER CONFIGURATION
+# ------------------------------------------------------------------
 worker:
-  image: "" # If empty, defaults to the main image repository/tag above
+  # If empty, it inherits the main image (useful for keeping versions synced)
+  image: ""
   resources: {}
-
-  # Volumes to mount on Worker Pods
-  # You can copy the driver volumes here if they share storage (e.g., hostPath)
   volumes: []
   volumeMounts: []
+
+# ------------------------------------------------------------------
+# NETWORKING (GATEWAY API)
+# ------------------------------------------------------------------
+gateway:
+  # Placeholder defaults (Helmfile injects the real ones)
+  name: internet-gateway
+  namespace: default
+  # Hostname for routing (e.g. sail.localhost)
+  host: "sail.localhost"
