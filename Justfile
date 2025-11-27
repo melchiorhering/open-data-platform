@@ -5,8 +5,12 @@ set shell := ["bash", "-c"]
 # ----------------------------------------------------------------------
 cluster_name := "local"
 config_file  := "kind-config.yml"
-github_user  := "melchiorhering"  # <--- VERIFY THIS
+github_user  := "melchiorhering"
 github_repo  := "open-data-platform"
+
+# Default Flux settings
+flux_branch  := "main"
+flux_path    := "clusters/dev"
 
 # ----------------------------------------------------------------------
 # DEFAULT
@@ -38,11 +42,12 @@ up:
     @# We create the namespace and a ConfigMap BEFORE bootstrapping Flux.
     @# Cilium's HelmRelease will read this ConfigMap.
     @echo "💉 Injecting Kind IP into Cluster ConfigMap..."
-    @KIND_IP=$$(kubectl get nodes {{cluster_name}}-control-plane -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}') && \
-    echo "   Detected IP: $$KIND_IP" && \
+    @# FIX: Use single $ for shell command substitution
+    @KIND_IP=$(kubectl get nodes {{cluster_name}}-control-plane -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}') && \
+    echo "   Detected IP: $KIND_IP" && \
     kubectl create ns flux-system --dry-run=client -o yaml | kubectl apply -f - && \
     kubectl create configmap cilium-env-values -n flux-system \
-        --from-literal=k8sServiceHost=$$KIND_IP \
+        --from-literal=k8sServiceHost=$KIND_IP \
         --from-literal=k8sServicePort=6443 \
         --dry-run=client -o yaml | kubectl apply -f -
 
@@ -56,14 +61,17 @@ down:
 # ----------------------------------------------------------------------
 
 # Install Flux components and start sync
-bootstrap:
+# Usage: just bootstrap [branch=main] [path=clusters/dev]
+bootstrap branch=flux_branch path=flux_path:
     @echo "🚀 Bootstrapping Flux..."
-    @# This installs the Flux controllers and tells them to watch clusters/dev
+    @echo "   Branch: {{branch}}"
+    @echo "   Path:   {{path}}"
+    @# This installs the Flux controllers and tells them to watch the specified path
     flux bootstrap github \
         --owner={{github_user}} \
         --repository={{github_repo}} \
-        --branch=main \
-        --path=clusters/dev \
+        --branch={{branch}} \
+        --path={{path}} \
         --personal
 
 # Force a Sync (Useful during dev)
