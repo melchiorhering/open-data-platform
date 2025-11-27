@@ -99,86 +99,96 @@ Here is a complete, polished Markdown section you can paste directly into your `
 
 ---
 
-## 🛠️ Local Development
+Based on your GitOps architecture (`clusters/dev` vs `clusters/prd`), here is the exact order of commands for both environments.
 
-This project uses a local **Kind** cluster powered by **Cilium** and **Gateway API**. Due to Docker networking limitations on macOS, we use a bridge pattern to access services locally via `https://*.localhost`.
+### 💻 Scenario 1: Local Development (Kind on Mac)
 
-### 📋 Prerequisites
+**Goal:** Create a cluster from scratch, hack networking to work on Mac, and start developing.
 
-Ensure you have the following tools installed:
-
-- **Docker Desktop**
-- **Just** (`brew install just`)
-- **Kubectl** (`brew install kubectl`)
-- **Helmfile** (`brew install helmfile`)
-- **Helm** (`brew install helm`)
-
-### 🚀 Quick Start
-
-1.  **Initialize the Cluster**
-    Creates the Kind cluster and prepares the nodes.
-
-    ```bash
+1.  **Commit your changes** (Flux pulls from Git, not your disk):
+    ```sh
+    git push origin main
+    ```
+2.  **Create Cluster & Network:**
+    - Creates Kind.
+    - Injects the IP into ConfigMap.
+    - Installs Cilium manually (to fix `NotReady` nodes).
+    <!-- end list -->
+    ```sh
     just up
     ```
-
-2.  **Install Infrastructure**
-    Deploys Cilium, Cert-Manager, and the Gateway configuration via Helmfile.
-
-    ```bash
-    just apply
+3.  **Install Flux:**
+    - Installs controllers.
+    - Adopts Cilium.
+    - Installs Platform (RustFS, Sail).
+    <!-- end list -->
+    ```sh
+    just bootstrap
     ```
-
-3.  **Deploy Applications**
-    Installs the demo applications (Echo Server) and HTTPRoutes.
-
-    ```bash
-    just deploy-apps
-    ```
-
-### 🌐 Accessing Services (The Tunnel)
-
-To access your services from your browser (e.g., `https://echo.localhost`), you must open a bridge tunnel. This bypasses NodePort limitations on macOS.
-
-1.  **Open the Tunnel** in a dedicated terminal window:
-
-    ```bash
+4.  **Access Services:**
+    - Opens the tunnel to `*.localhost`.
+    <!-- end list -->
+    ```sh
     just connect
     ```
 
-    _(Note: This requires `sudo` to bind to your local port 443)._
+---
 
-2.  **Browse:**
-    Open your browser to **[https://echo.localhost](https://echo.localhost)**.
+### ☁️ Scenario 2: VPS / Cloud (Production)
 
-    _You should see the success message from the Echo server via the Cilium Gateway._
+**Goal:** Connect to a real remote cluster (e.g., Hetzner, AWS) that was provisioned with **No CNI** and **No Kube-Proxy**.
 
-### ✅ Verification
+**Prerequisite:** You have the `KUBECONFIG` for your remote cluster.
 
-To run a full end-to-end automated test suite (which spins up a temporary bridge, curls the gateway, and cleans up):
+1.  **Connect to Remote Cluster:**
 
-```bash
-just test
-```
+    ```sh
+    export KUBECONFIG=~/path/to/vps.kubeconfig
+    ```
 
-### 🧹 Teardown
+2.  **Bootstrap Networking (Manual Step):**
 
-To destroy the cluster and clean up all resources:
+    - You cannot use `just up` (it tries to create Kind).
+    - You must manually run the Helm command to install Cilium, but with the **Real Public IP** of your VPS.
 
-```bash
-just down
-```
+    <!-- end list -->
+
+    ```sh
+    # 1. Install CRDs
+    kubectl apply -f https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+
+    # 2. Install Cilium (Point host to API Server Internal IP)
+    helm install cilium cilium/cilium \
+      --version 1.18.4 \
+      --namespace kube-system \
+      -f values/cilium.yaml \
+      --set k8sServiceHost=10.0.0.1 \   <-- YOUR VPS PRIVATE IP
+      --set k8sServicePort=6443
+    ```
+
+3.  **Bootstrap Flux:**
+
+    - You override the path to point to the Production cluster definition.
+
+    <!-- end list -->
+
+    ```sh
+    just bootstrap path=clusters/prd
+    ```
+
+4.  **Access:**
+
+    - **Do not** use `just connect`.
+    - Get the External IP of your Gateway: `kubectl get svc -n default`.
+    - Configure your DNS (Cloudflare/GoDaddy) to point `*.your-domain.com` to that IP.
 
 ---
 
-### 📖 Command Reference
+### Summary Checklist
 
-| Command            | Description                                                   |
-| :----------------- | :------------------------------------------------------------ |
-| `just up`          | Creates the Kind cluster (if missing).                        |
-| `just apply`       | Installs system infrastructure (Cilium, Certs, Gateway).      |
-| `just deploy-apps` | Installs application workloads and Routes.                    |
-| `just connect`     | **Interactive Mode:** Opens a tunnel to access `*.localhost`. |
-| `just test`        | **CI Mode:** Runs automated connectivity tests.               |
-| `just status`      | Shows the status of Gateways and Pods.                        |
-| `just down`        | Destroys the local cluster.                                   |
+| Step              | Local (Kind)                          | VPS / Cloud (Strict Mode)                  |
+| :---------------- | :------------------------------------ | :----------------------------------------- |
+| **1. Provision**  | `just up` (Creates Kind)              | Terraform / Ansible / Manual               |
+| **2. Networking** | `just up` (Auto-runs `bootstrap-cni`) | **Manual Helm Install** (Targeting VPS IP) |
+| **3. GitOps**     | `just bootstrap`                      | `just bootstrap path=clusters/prd`         |
+| **4. Access**     | `just connect` (Tunnel)               | Public DNS / LoadBalancer IP               |
