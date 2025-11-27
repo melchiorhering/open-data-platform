@@ -16,8 +16,8 @@ spec:
   # READ DYNAMIC IP FROM CONFIGMAP
   valuesFrom:
     - kind: ConfigMap
-      name: cilium-env-values
-      optional: false
+      name: cilium-env-values # Created by 'just up'
+      optional: false # Fail if missing
   values:
     ipam:
       mode: "kubernetes"
