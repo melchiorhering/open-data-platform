@@ -33,8 +33,8 @@ default:
 check-tools:
     @echo "🔍 Checking prerequisites..."
     @for tool in docker kind kubectl helm flux; do \
-        if ! command -v $$tool &> /dev/null; then \
-            echo "❌ Error: '$$tool' is not installed."; \
+        if ! command -v $tool &> /dev/null; then \
+            echo "❌ Error: '$tool' is not installed."; \
             exit 1; \
         fi; \
     done
@@ -63,7 +63,7 @@ up: check-tools
     @KIND_IP=$(kubectl get nodes {{cluster_name}}-control-plane -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}') && \
     kubectl create ns flux-system --dry-run=client -o yaml | kubectl apply -f - && \
     kubectl create configmap cilium-env-values -n flux-system \
-        --from-literal=k8sServiceHost=$$KIND_IP \
+        --from-literal=k8sServiceHost=$KIND_IP \
         --from-literal=k8sServicePort=6443 \
         --dry-run=client -o yaml | kubectl apply -f -
 
@@ -94,7 +94,7 @@ bootstrap-cni:
         --namespace kube-system \
         --create-namespace \
         --wait \
-        -f values/cilium.yaml \
+        -f infrastructure/values/cilium-values.yaml \
         --set k8sServiceHost=$$KIND_IP \
         --set k8sServicePort=6443
 

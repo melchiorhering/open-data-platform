@@ -13,24 +13,18 @@ spec:
         kind: HelmRepository
         name: cilium
         namespace: flux-system
-  # READ DYNAMIC IP FROM CONFIGMAP
+
+  # MERGE VALUES FROM TWO SOURCES
   valuesFrom:
+    # 1. Dynamic IP (Injected by 'just up')
     - kind: ConfigMap
-      name: cilium-env-values # Created by 'just up'
-      optional: false # Fail if missing
-  values:
-    ipam:
-      mode: "kubernetes"
-    kubeProxyReplacement: true
-    gatewayAPI:
-      enabled: true
-    l2announcements:
-      enabled: true
-      leaseDuration: 15s
-      leaseRenewDeadline: 5s
-      leaseRetryPeriod: 2s
-    externalIPs:
-      enabled: true
-    hubble:
-      relay: { enabled: true }
-      ui: { enabled: true }
+      name: cilium-env-values
+      optional: false
+
+    # 2. Static Config (Generated from 'cilium-values.yaml')
+    - kind: ConfigMap
+      name: cilium-static-values
+      optional: false
+
+  # NOTE: We removed the 'values:' block because all settings
+  # are now inside the 'cilium-static-values' ConfigMap.

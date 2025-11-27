@@ -5,3 +5,9 @@ resources:
   - cilium.yaml
   - cert-manager.yaml
   - cluster-config.yaml
+
+# This takes your local file and turns it into the ConfigMap used above
+configMapGenerator:
+  - name: cilium-static-values
+    files:
+      - values.yaml=cilium-values.yaml # key=filename
