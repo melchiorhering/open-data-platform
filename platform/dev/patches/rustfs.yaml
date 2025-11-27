@@ -1,0 +1,18 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: rustfs
+  namespace: default
+spec:
+  values:
+    # DEV OVERRIDES
+    replicaCount: 1
+    storage:
+      size: 1Gi
+    auth:
+      accessKey: "admin"
+      secretKey: "password123"
+    gateway:
+      hosts:
+        s3: "s3.localhost"
+        console: "console.localhost"

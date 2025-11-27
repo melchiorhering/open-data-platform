@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: default
+
+resources:
+  # 1. Inherit the blueprints
+  - ../base
+
+patches:
+  # 2. Apply separate patch files
+  - path: patches/rustfs.yaml
+  # - path: patches/sail.yaml
+  # - path: patches/prefect.yaml (Future)

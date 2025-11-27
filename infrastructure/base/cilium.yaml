@@ -1,0 +1,36 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: cilium
+  namespace: kube-system
+spec:
+  interval: 1h
+  chart:
+    spec:
+      chart: cilium
+      version: "1.18.4"
+      sourceRef:
+        kind: HelmRepository
+        name: cilium
+        namespace: flux-system
+  # READ DYNAMIC IP FROM CONFIGMAP
+  valuesFrom:
+    - kind: ConfigMap
+      name: cilium-env-values
+      optional: false
+  values:
+    ipam:
+      mode: "kubernetes"
+    kubeProxyReplacement: true
+    gatewayAPI:
+      enabled: true
+    l2announcements:
+      enabled: true
+      leaseDuration: 15s
+      leaseRenewDeadline: 5s
+      leaseRetryPeriod: 2s
+    externalIPs:
+      enabled: true
+    hubble:
+      relay: { enabled: true }
+      ui: { enabled: true }

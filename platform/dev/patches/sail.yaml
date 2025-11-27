@@ -1,0 +1,14 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: sail
+  namespace: default
+spec:
+  values:
+    # DEV OVERRIDES
+    gateway:
+      host: "sail.localhost"
+    image:
+      repository: sail
+      tag: latest
+      pullPolicy: Never # Critical for local dev

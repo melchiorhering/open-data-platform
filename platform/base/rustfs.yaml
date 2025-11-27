@@ -1,0 +1,18 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
+kind: HelmRelease
+metadata:
+  name: rustfs
+  namespace: default
+spec:
+  interval: 5m
+  chart:
+    spec:
+      # Points to the source code you just moved
+      chart: ./platform/charts/object-storage/rustfs
+      sourceRef:
+        kind: GitRepository
+        name: open-data-platform
+        namespace: flux-system
+  dependsOn:
+    - name: infrastructure
+      namespace: flux-system
