@@ -11,7 +11,7 @@ spec:
     branch: main
   secretRef:
     name: flux-system
-  url: https://github.com/melchiorhering/open-data-platform.git
+  url: ssh://git@github.com/melchiorhering/open-data-platform
 ---
 apiVersion: kustomize.toolkit.fluxcd.io/v1
 kind: Kustomization
