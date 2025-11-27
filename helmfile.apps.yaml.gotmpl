@@ -1,5 +1,12 @@
 # helmfile.apps.yaml
 
+repositories:
+  - name: prefect
+    url: https://prefecthq.github.io/prefect-helm
+# # helm-git powered repository: You can treat any Git repository as a charts repository
+# - name: polaris
+#   url: git+https://github.com/reactiveops/polaris@deploy/helm?ref=master
+
 releases:
   # ------------------------------------------------------------------
   # RUSTFS (Object Storage)
@@ -21,16 +28,16 @@ releases:
           name: "{{ .Values.gateway.name }}"
           namespace: "{{ .Values.gateway.namespace }}"
 
-  - name: sail
-    namespace: default
-    chart: ./components/compute/sail
-    labels:
-      group: apps
-    values:
-      # 1. Load Chart Defaults (Remote Image settings)
-      - ./components/compute/sail/values.yaml
+  # - name: sail
+  #   namespace: default
+  #   chart: ./components/compute/sail
+  #   labels:
+  #     group: apps
+  #   values:
+  #     # 1. Load Chart Defaults (Remote Image settings)
+  #     - ./components/compute/sail/values.yaml
 
-      # 2. Inject Global Gateway Context
-      - gateway:
-          name: "{{ .Values.gateway.name }}"
-          namespace: "{{ .Values.gateway.namespace }}"
+  #     # 2. Inject Global Gateway Context
+  #     - gateway:
+  #         name: "{{ .Values.gateway.name }}"
+  #         namespace: "{{ .Values.gateway.namespace }}"
