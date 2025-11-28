@@ -1,4 +1,4 @@
-apiVersion: helm.toolkit.fluxcd.io/v2
+apiVersion: helm.toolkit.fluxcd.io/v2beta2
 kind: HelmRelease
 metadata:
   name: cilium
@@ -14,17 +14,16 @@ spec:
         name: cilium
         namespace: flux-system
 
-  # MERGE VALUES FROM TWO SOURCES
   valuesFrom:
-    # 1. Dynamic IP (Injected by 'just up')
+    # 1. Dynamic IP (Created by Justfile)
+    # NO 'valuesKey' here! We want the raw keys (k8sServiceHost) merged directly.
     - kind: ConfigMap
       name: cilium-env-values
       optional: false
 
-    # 2. Static Config (Generated from 'cilium-values.yaml')
+    # 2. Static Config (Created by Kustomize)
+    # YES 'valuesKey' here! We want to parse the 'values.yaml' string inside.
     - kind: ConfigMap
       name: cilium-static-values
+      valuesKey: values.yaml
       optional: false
-
-  # NOTE: We removed the 'values:' block because all settings
-  # are now inside the 'cilium-static-values' ConfigMap.
