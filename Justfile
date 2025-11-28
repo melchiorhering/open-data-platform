@@ -115,13 +115,16 @@ bootstrap: check-tools
         --private-key-file={{flux_key_path}} \
         --silent
 
-# Force Sync
+# Force a Sync
 sync:
     @echo "🔄 Forcing Reconciliation..."
-    flux reconcile source git open-data-platform
-    flux reconcile kustomization crds
-    flux reconcile kustomization infrastructure
-    flux reconcile kustomization platform
+    @# We reconcile the source first so Flux sees the new commits
+    flux reconcile source git open-data-platform -n flux-system
+
+    @# Then we reconcile the layers in order
+    flux reconcile kustomization crds -n flux-system
+    flux reconcile kustomization infrastructure -n flux-system
+    flux reconcile kustomization platform -n flux-system
 
 # ----------------------------------------------------------------------
 # 3. DEVELOPMENT ACCESS

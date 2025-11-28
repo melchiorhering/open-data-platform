@@ -11,7 +11,7 @@ spec:
   # Which Git Repo to use
   sourceRef:
     kind: GitRepository
-    name: open-data-platform
+    name: flux-system
     namespace: flux-system
 
   # Path to your wrapper (contains the kustomization.yaml)

@@ -11,7 +11,7 @@ spec:
       chart: ./infrastructure/charts/cluster-config
       sourceRef:
         kind: GitRepository
-        name: open-data-platform
+        name: flux-system
         namespace: flux-system
   dependsOn:
     - name: cilium

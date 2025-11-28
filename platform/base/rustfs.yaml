@@ -11,7 +11,7 @@ spec:
       chart: ./platform/charts/object-storage/rustfs
       sourceRef:
         kind: GitRepository
-        name: open-data-platform
+        name: flux-system
         namespace: flux-system
   dependsOn:
     - name: infrastructure
