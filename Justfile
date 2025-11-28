@@ -63,7 +63,7 @@ up: check-tools
     @# We capture the IP and inject it into the 'kube-system' namespace for Cilium to read.
     @KIND_IP=$(kubectl get nodes {{cluster_name}}-control-plane -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}') && \
     kubectl create configmap cilium-env-values -n kube-system \
-        --from-literal=k8sServiceHost=$$KIND_IP \
+        --from-literal=k8sServiceHost=$KIND_IP \
         --from-literal=k8sServicePort=6443 \
         --dry-run=client -o yaml | kubectl apply -f -
 
