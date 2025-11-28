@@ -1,4 +1,4 @@
-apiVersion: helm.toolkit.fluxcd.io/v2beta2
+apiVersion: helm.toolkit.fluxcd.io/v2
 kind: HelmRelease
 metadata:
   name: cilium
@@ -16,14 +16,16 @@ spec:
 
   valuesFrom:
     # 1. Dynamic IP (From Justfile)
-    # NO 'valuesKey' here! It merges raw keys (k8sServiceHost) directly.
+    # CRITICAL: Do NOT put 'valuesKey' here.
+    # We want the raw keys (k8sServiceHost) to be merged as-is.
     - kind: ConfigMap
       name: cilium-env-values
       optional: false
 
     # 2. Static Config (From Kustomize Generator)
-    # YES 'valuesKey' here! It parses the 'values.yaml' string inside.
+    # CRITICAL: MUST have 'valuesKey'.
+    # We want to unpack the YAML string inside this key.
     - kind: ConfigMap
       name: cilium-static-values
-      valuesKey: values.yaml # Keep this one!
+      valuesKey: values.yaml
       optional: false
