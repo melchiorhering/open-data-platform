@@ -17,7 +17,7 @@ spec:
     - name: cilium
       namespace: kube-system
     - name: cert-manager
-      namespace: cert-manager
+      namespace: flux-system
 
   values:
     gateway:
