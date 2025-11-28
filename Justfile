@@ -94,8 +94,8 @@ bootstrap-cni:
         --namespace kube-system \
         --create-namespace \
         --wait \
-        -f infrastructure/values/cilium-values.yaml \
-        --set k8sServiceHost=$$KIND_IP \
+        -f infrastructure/values/cilium.yaml \
+        --set k8sServiceHost=$KIND_IP \
         --set k8sServicePort=6443
 
 # Bootstrap Flux using SSH

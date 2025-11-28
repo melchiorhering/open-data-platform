@@ -10,4 +10,4 @@ resources:
 configMapGenerator:
   - name: cilium-static-values
     files:
-      - values.yaml=cilium-values.yaml # key=filename
+      - values.yaml=../values/cilium.yaml # key=filename
