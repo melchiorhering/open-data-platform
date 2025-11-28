@@ -29,10 +29,3 @@ spec:
     hubble:
       relay: { enabled: true }
       ui: { enabled: true }
-
-  valuesFrom:
-    # 1. Dynamic IP (From Justfile)
-    # Correct: No 'valuesKey' because Justfile uses --from-literal (Raw Keys)
-    - kind: ConfigMap
-      name: cilium-env-values
-      optional: false
