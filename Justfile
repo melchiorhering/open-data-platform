@@ -58,11 +58,11 @@ up: check-tools
         echo "✅ Cluster '{{cluster_name}}' is running."; \
     fi
 
-    @# 2. Inject Dynamic IP (For Flux later)
+    @# 3. Inject Dynamic IP for Flux/Cilium
     @echo "💉 Injecting Kind IP into Cluster ConfigMap..."
     @KIND_IP=$(kubectl get nodes {{cluster_name}}-control-plane -o jsonpath='{.status.addresses[?(@.type=="InternalIP")].address}') && \
-    kubectl create ns flux-system --dry-run=client -o yaml | kubectl apply -f - && \
-    kubectl create configmap cilium-env-values -n flux-system \
+    # FIX: Change namespace to kube-system so Cilium can read it
+    kubectl create configmap cilium-env-values -n kube-system \
         --from-literal=k8sServiceHost=$KIND_IP \
         --from-literal=k8sServicePort=6443 \
         --dry-run=client -o yaml | kubectl apply -f -

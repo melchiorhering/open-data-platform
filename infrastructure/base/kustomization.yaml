@@ -6,8 +6,9 @@ resources:
   - cert-manager.yaml
   - cluster-config.yaml
 
-# This takes your local file and turns it into the ConfigMap used above
 configMapGenerator:
   - name: cilium-static-values
+    # FIX: Force this into the correct namespace
+    namespace: kube-system
     files:
-      - values.yaml=../values/cilium.yaml # key=filename
+      - values.yaml=cilium-values.yaml
