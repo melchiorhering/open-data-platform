@@ -8,7 +8,9 @@ resources:
 
 configMapGenerator:
   - name: cilium-static-values
-    # FIX: Force this into the correct namespace
     namespace: kube-system
     files:
       - values.yaml=cilium-values.yaml
+    # ADD THIS BLOCK:
+    options:
+      disableNameSuffixHash: true
