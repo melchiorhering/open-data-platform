@@ -15,15 +15,15 @@ spec:
         namespace: flux-system
 
   valuesFrom:
-    # 1. Dynamic IP (Created by Justfile)
-    # NO 'valuesKey' here! We want the raw keys (k8sServiceHost) merged directly.
+    # 1. Dynamic IP (From Justfile)
+    # NO 'valuesKey' here! It merges raw keys (k8sServiceHost) directly.
     - kind: ConfigMap
       name: cilium-env-values
       optional: false
 
-    # 2. Static Config (Created by Kustomize)
-    # YES 'valuesKey' here! We want to parse the 'values.yaml' string inside.
+    # 2. Static Config (From Kustomize Generator)
+    # YES 'valuesKey' here! It parses the 'values.yaml' string inside.
     - kind: ConfigMap
       name: cilium-static-values
-      valuesKey: values.yaml
+      valuesKey: values.yaml # Keep this one!
       optional: false
