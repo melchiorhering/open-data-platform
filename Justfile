@@ -97,6 +97,9 @@ bootstrap-cni:
         -f infrastructure/cilium/values.yaml \
         --set k8sServiceHost=$KIND_IP \
         --set k8sServicePort=6443
+    echo "⏳ Waiting for Cilium to be ready..."
+    kubectl -n kube-system rollout status deployment/cilium-operator
+    kubectl -n kube-system rollout status ds/cilium --timeout=5m
 
 # Bootstrap Flux using SSH
 bootstrap: check-tools
