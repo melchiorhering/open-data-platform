@@ -94,7 +94,7 @@ bootstrap-cni:
         --namespace kube-system \
         --create-namespace \
         --wait \
-        -f infrastructure/values/cilium.yaml \
+        -f infrastructure/cilium/values.yaml \
         --set k8sServiceHost=$KIND_IP \
         --set k8sServicePort=6443
 

@@ -16,9 +16,3 @@ spec:
         kind: HelmRepository
         name: jetstack
         namespace: flux-system
-  values:
-    installCRDs: true
-    config:
-      apiVersion: "controller.config.cert-manager.io/v1alpha1"
-      kind: "ControllerConfiguration"
-      enableGatewayAPI: true

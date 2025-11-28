@@ -27,5 +27,5 @@ spec:
     # We want to unpack the YAML string inside this key.
     - kind: ConfigMap
       name: cilium-static-values
-      valuesKey: values.yaml
+      valuesKey: cilium-values.yaml
       optional: false
