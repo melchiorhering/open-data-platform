@@ -5,3 +5,4 @@ resources:
   # Gateway API (Experimental Channel)
   # -------------------------------------------------------------
   - https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/experimental-install.yaml
+  - https://github.com/cert-manager/cert-manager/releases/download/v1.19.0/cert-manager.crds.yaml

@@ -18,6 +18,7 @@ flux_key_path     := env('FLUX_SSH_KEY_PATH', env('HOME') / '.ssh/id_ed25519')
 # Versions
 gateway_api_ver   := env('GATEWAY_API_VERSION', '1.4.0')
 cilium_ver        := env('CILIUM_VERSION', '1.18.4')
+cert_manager      := env("CERT_MANAGER_VERSION", '1.19.0')
 
 # ----------------------------------------------------------------------
 # DEFAULT
@@ -100,6 +101,9 @@ bootstrap-cni:
     echo "⏳ Waiting for Cilium to be ready..."
     kubectl -n kube-system rollout status deployment/cilium-operator
     kubectl -n kube-system rollout status ds/cilium --timeout=5m
+
+    @echo "🔗 Installing Cert-Manager CRDs"
+    @kubectl apply --server-side -f https://github.com/cert-manager/cert-manager/releases/download/v{{cert_manager}}/cert-manager.crds.yaml
 
 # Bootstrap Flux using SSH
 bootstrap: check-tools

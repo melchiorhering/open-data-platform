@@ -7,6 +7,14 @@ spec:
   install:
     createNamespace: true
   interval: 1h
+
+  # --- ADD THIS DEPENDENCY ---
+  # This ensures CNI (Cilium) is Ready before Cert-Manager tries to start.
+  dependsOn:
+    - name: cilium
+      namespace: kube-system
+  # ---------------------------
+
   chart:
     spec:
       chart: cert-manager
