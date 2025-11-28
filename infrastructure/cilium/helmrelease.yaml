@@ -16,16 +16,14 @@ spec:
 
   valuesFrom:
     # 1. Dynamic IP (From Justfile)
-    # CRITICAL: Do NOT put 'valuesKey' here.
-    # We want the raw keys (k8sServiceHost) to be merged as-is.
+    # Correct: No 'valuesKey' because Justfile uses --from-literal (Raw Keys)
     - kind: ConfigMap
       name: cilium-env-values
       optional: false
 
-    # 2. Static Config (From Kustomize Generator)
-    # CRITICAL: MUST have 'valuesKey'.
-    # We want to unpack the YAML string inside this key.
+    # 2. Static Config (From Kustomize)
+    # Corrected: Must match the key defined in kustomization.yaml
     - kind: ConfigMap
       name: cilium-static-values
-      valuesKey: cilium-values.yaml
+      valuesKey: values.yaml
       optional: false
