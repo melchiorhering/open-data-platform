@@ -13,17 +13,26 @@ spec:
         kind: HelmRepository
         name: cilium
         namespace: flux-system
+  values:
+    ipam:
+      mode: "kubernetes"
+    kubeProxyReplacement: true
+    gatewayAPI:
+      enabled: true
+    l2announcements:
+      enabled: true
+      leaseDuration: 15s
+      leaseRenewDeadline: 5s
+      leaseRetryPeriod: 2s
+    externalIPs:
+      enabled: true
+    hubble:
+      relay: { enabled: true }
+      ui: { enabled: true }
 
   valuesFrom:
     # 1. Dynamic IP (From Justfile)
     # Correct: No 'valuesKey' because Justfile uses --from-literal (Raw Keys)
     - kind: ConfigMap
       name: cilium-env-values
-      optional: false
-
-    # 2. Static Config (From Kustomize)
-    # Corrected: Must match the key defined in kustomization.yaml
-    - kind: ConfigMap
-      name: cilium-static-values
-      valuesKey: values.yaml
       optional: false

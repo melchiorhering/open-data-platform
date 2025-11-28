@@ -4,4 +4,4 @@ resources:
   - base/sources.yaml
   - cert-manager/helmrelease.yaml
   - cluster-config/helmrelease.yaml
-  - cilium/
+  - cilium/helmrelease.yaml
